@@ -1,1 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Exchange Dashboard</title>
 
+<style>
+
+body{margin:0;background:#0b0f14;font-family:system-ui;color:white}
+
+/* sidebar */
+
+.side{
+position:fixed;width:230px;height:100vh;background:#111827;padding:20px
+}
+
+.side img{width:150px;margin-bottom:20px}
+
+.side button{
+width:100%;padding:13px;margin:5px 0;
+background:#1f2937;border:none;color:white;border-radius:8px;cursor:pointer
+}
+
+.main{margin-left:230px;padding:30px}
+
+.card{background:#111827;padding:22px;border-radius:16px;margin-bottom:18px}
+
+.balance{font-size:42px}
+
+/* candle */
+
+canvas{background:black;border-radius:10px}
+
+/* popup */
+
+.pop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);
+justify-content:center;align-items:center}
+
+.box{background:#111827;padding:30px;border-radius:16px;width:330px;text-align:center}
+
+</style>
+</head>
+
+<body>
+
+<div class="side">
+
+<img src="logo.png">
+
+<button onclick="withdraw()">Withdraw</button>
+<button onclick="admin()">Admin Backend</button>
+<button onclick="logout()">Logout</button>
+
+</div>
+
+<div class="main">
+
+<div class="card">
+Wallet:<br>
+<b id="w"></b>
+</div>
+
+<div class="card">
+Balance
+<div class="balance" id="bal">0.00</div>
+</div>
+
+<div class="card">
+Mining Engine
+<div id="mine">Starting nodes…</div>
+</div>
+
+<div class="card">
+Trading Screen
+<canvas id="c" width="500" height="200"></canvas>
+</div>
+
+</div>
+
+
+<!-- withdraw countdown -->
+
+<div class="pop" id="lockPop">
+<div class="box">
+<h3>Withdrawal Locked</h3>
+<p>Unlocks in:</p>
+<h2 id="timer">60</h2>
+</div>
+</div>
+
+
+<script>
+
+w.innerText=localStorage.wallet;
+
+
+/* auto profit */
+
+let b=15000+Math.random()*4000;
+setInterval(()=>{
+b+=Math.random()*7;
+bal.innerText=b.toFixed(2);
+},1300);
+
+
+/* mining engine */
+
+let blocks=0;
+setInterval(()=>{
+blocks++;
+mine.innerText="Block confirmed #"+blocks;
+},2200);
+
+
+/* candle animation */
+
+let ctx=c.getContext("2d");
+
+setInterval(()=>{
+ctx.fillStyle="black";
+ctx.fillRect(0,0,500,200);
+
+for(let i=0;i<20;i++){
+let h=Math.random()*120;
+ctx.fillStyle=Math.random()>.5?"#22c55e":"#ef4444";
+ctx.fillRect(i*25+20,180-h,10,h);
+}
+},900);
+
+
+/* withdraw lock timer */
+
+function withdraw(){
+lockPop.style.display="flex";
+
+let t=60;
+timer.innerText=t;
+
+let x=setInterval(()=>{
+t--;
+timer.innerText=t;
+if(t<=0){
+clearInterval(x);
+lockPop.style.display="none";
+alert("Withdrawal Unlocked");
+}
+},1000);
+}
+
+
+/* admin wallet generator */
+
+function admin(){
+localStorage.wallet="0x"+Math.random().toString(16).slice(2,42);
+alert("New user wallet generated");
+location.reload();
+}
+
+function logout(){
+location="index.html";
+}
+
+</script>
+
+</body>
+</html>
