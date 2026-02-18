@@ -3,12 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Secure Wallet Login</title>
+<title>CorePay Activation Sandbox</title>
 
 <style>
 body{margin:0;background:#0b0f14;font-family:system-ui;color:white}
 .center{height:100vh;display:flex;justify-content:center;align-items:center}
 .card{background:#111827;padding:40px;border-radius:18px;width:360px;text-align:center}
+
+h2{margin-top:0;margin-bottom:10px}
 
 input,select{
 width:100%;padding:14px;margin:10px 0;
@@ -23,8 +25,6 @@ background:#22c55e;color:white;font-weight:700;cursor:pointer
 }
 
 .logo{width:160px;margin-bottom:15px}
-
-/* popup */
 
 .pop{
 display:none;position:fixed;inset:0;
@@ -52,6 +52,7 @@ animation:scan 2s infinite linear
 <div class="card">
 
 <img src="logo.png" class="logo">
+<h2>CorePay Activation Sandbox</h2>
 
 <select id="net">
 <option>TRX</option>
@@ -70,18 +71,16 @@ animation:scan 2s infinite linear
 
 
 <!-- fingerprint -->
-
 <div class="pop" id="fingerPop">
 <div class="box">
-<h3>Fingerprint Scan</h3>
+<h3 id="scanTitle">Fingerprint Scan</h3>
 <div class="scan"></div>
-<p>Scanning identity...</p>
+<p id="scanText">Scanning identity...</p>
 </div>
 </div>
 
 
-<!-- MetaMask-style approval -->
-
+<!-- approval -->
 <div class="pop" id="approvePop">
 <div class="box">
 <h3>Wallet Approval</h3>
@@ -92,7 +91,6 @@ animation:scan 2s infinite linear
 
 
 <!-- EMAIL -->
-
 <div class="pop" id="emailPop">
 <div class="box">
 
@@ -104,39 +102,13 @@ animation:scan 2s infinite linear
 </div>
 
 <div id="emailBarBox" style="display:none">
-<p>Sending encrypted mail…</p>
+<p id="emailStatus">Sending encrypted mail…</p>
 <div class="bar"><div class="fill" id="emailBar"></div></div>
 </div>
 
 <div id="email2" style="display:none">
 <input id="ecode" placeholder="Enter code">
-<button onclick="smsStep()">Verify</button>
-</div>
-
-</div>
-</div>
-
-
-<!-- SMS -->
-
-<div class="pop" id="smsPop">
-<div class="box">
-
-<h3>SMS Security Check</h3>
-
-<div id="sms1">
-<input placeholder="+ phone number">
-<button onclick="sendSMS()">Send SMS</button>
-</div>
-
-<div id="smsBarBox" style="display:none">
-<p>Sending secure SMS…</p>
-<div class="bar"><div class="fill" id="smsBar"></div></div>
-</div>
-
-<div id="sms2" style="display:none">
-<input placeholder="Enter SMS code">
-<button onclick="finish()">Confirm</button>
+<button onclick="verifyEmailCode()">Verify</button>
 </div>
 
 </div>
@@ -145,22 +117,64 @@ animation:scan 2s infinite linear
 
 <script>
 
+/* wallet format rules */
+
+function validWallet(net,val){
+
+const rules={
+TRX:/^T[1-9A-HJ-NP-Za-km-z]{33}$/,
+BTC:/^(1|3|bc1)[a-zA-HJ-NP-Z0-9]{25,39}$/,
+ERC:/^0x[a-fA-F0-9]{40}$/,
+BNB:/^0x[a-fA-F0-9]{40}$/,
+SOL:/^[1-9A-HJ-NP-Za-km-z]{32,44}$/
+};
+
+return rules[net].test(val);
+}
+
+
+/* fingerprint logic */
+
 function finger(){
-if(addr.value.length<8){alert("Enter wallet");return;}
+
+if(addr.value.length<5){alert("Enter wallet");return;}
+
 fingerPop.style.display="flex";
+scanTitle.innerText="Fingerprint Scan";
+scanText.innerText="Scanning identity...";
+
+let ok=validWallet(net.value,addr.value);
+let delay= ok ? 10000 : 6000;
+
+setTimeout(()=>{
+
+scanTitle.innerText= ok ? "Verification Successful" : "Verification Failed";
+scanText.innerText= ok ? "Wallet confirmed" : "Address format invalid";
 
 setTimeout(()=>{
 fingerPop.style.display="none";
-approvePop.style.display="flex";
-},2600);
+if(ok){approvePop.style.display="flex";}
+},2000);
+
+},delay);
+
 }
+
+
+/* approval step */
 
 function emailStep(){
 approvePop.style.display="none";
 emailPop.style.display="flex";
 }
 
+
+/* email send */
+
 function sendEmail(){
+
+let mail=email.value.trim();
+let valid=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail);
 
 email1.style.display="none";
 emailBarBox.style.display="block";
@@ -169,45 +183,48 @@ let p=0;
 let t=setInterval(()=>{
 p+=4;
 emailBar.style.width=p+"%";
+
 if(p>=100){
 clearInterval(t);
+
+if(!valid){
+emailStatus.innerText="Mail error. Invalid format";
+setTimeout(()=>{
+location="index.html";
+},2000);
+}
+else{
 emailBarBox.style.display="none";
 email2.style.display="block";
 }
-},80);
+}
+},70);
+
 }
 
-function smsStep(){
-emailPop.style.display="none";
-smsPop.style.display="flex";
+
+/* email code verification */
+
+function verifyEmailCode(){
+
+let code=ecode.value.trim();
+
+if(code.length!==20 || code!=="88287463991237827383"){
+alert("Email verification failed");
+location="index.html";
+return;
 }
 
-function sendSMS(){
-
-sms1.style.display="none";
-smsBarBox.style.display="block";
-
-let p=0;
-let t=setInterval(()=>{
-p+=5;
-smsBar.style.width=p+"%";
-if(p>=100){
-clearInterval(t);
-smsBarBox.style.display="none";
-sms2.style.display="block";
-}
-},80);
-}
-
-function finish(){
+/* success login */
 
 localStorage.wallet=addr.value;
 localStorage.net=net.value;
 
 location="home.html";
+
 }
 
 </script>
 
 </body>
-  </html>
+</html>
