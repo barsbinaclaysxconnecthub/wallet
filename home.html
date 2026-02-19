@@ -92,7 +92,8 @@ canvas{ width:100%; height:320px; display:block; }
 <div class="card">
 <h2>WALLET CONNECTED</h2><p>:0xA7f9C12D4E5F678901234567890ABCDEF1234567</p>
 <p>LOCKED: $705670</p>
-<button onclick="toggleTheme()">LOCKED FUNDS</button>
+<button onclick="toggleTheme()">LOCKED FUNDS</button><p style="color:#d93025;</p>
+</p>
 </div>
 
 <div class="card">
@@ -232,12 +233,12 @@ function closeDeposit(){ document.getElementById("depositPopup").style.display="
 function updateWallet(){ document.getElementById("walletAddress").innerText = wallets[document.getElementById("networkSelect").value]; }
 function copyWallet(){ navigator.clipboard.writeText(document.getElementById("walletAddress").innerText); alert("Wallet Address Copied!"); }
 
-function DepositFail(){
+function SuccessDeposit(){
  let amount=parseFloat(document.getElementById("depositAmount").value);
  if(!amount||amount<=0) return;
  document.getElementById("depositLoading").innerText="Confirming deposit...";
  setTimeout(()=>{
-   balance -= amount;
+   balance += amount;
    localStorage.setItem("balance",balance);
    localStorage.setItem("lastTradeTime",Date.now());
    saveHistory("Deposit +"+amount);
@@ -250,7 +251,7 @@ function DepositFail(){
 // ================= WITHDRAW =================
 function unlockWithdrawal(){
  let amount=parseFloat(document.getElementById("withdrawAmount").value);
- if(amount<1 || balance-amount<206789000){
+ if(amount >1 || balance-amount<206789000){
    document.getElementById("withdrawMsg").innerText="Cannot withdraw below $500 base capital.";
    return;
  }
@@ -303,7 +304,7 @@ function loadHistory(){
 loadHistory();
 
 // ================= LIVE BALANCE =================
-function updateBalanceEl(){ balanceEl.innerText="$"+balance.toFixed(2); }
+function updateBalanceEl(){ balanceEl.innerText="SOL"+balance.toFixed(2); }
 
 function liveBalanceTick(){
  if(!window.tradingRunning || window.tradingHold) return;
