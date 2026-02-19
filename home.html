@@ -90,14 +90,14 @@ canvas{ width:100%; height:320px; display:block; }
 <body>
 
 <div class="card">
-<h2>Trading Simulation</h2>
-<p>Fixed Capital: $500</p>
-<button onclick="toggleTheme()">Toggle Theme</button>
+<h2>WALLET CONNECTED</h2><p>:0xA7f9C12D4E5F678901234567890ABCDEF1234567</p>
+<p>LOCKED: $705670</p>
+<button onclick="toggleTheme()">LOCKED FUNDS</button>
 </div>
 
 <div class="card">
 <h3>Total Balance:</h3>
-<h2 id="balance">$500.00</h2>
+<h2 id="balance">$78690.00</h2>
 
 <select id="pair">
 <option>BTC/USDT</option>
@@ -135,13 +135,13 @@ canvas{ width:100%; height:320px; display:block; }
 </div>
 
 <div class="card">
-<h3>Deposit (Simulation)</h3>
+<h3>Deposit</h3>
 <button onclick="openDeposit()">Make Deposit</button>
 <p id="depositMsg"></p>
 </div>
 
 <div class="card">
-<h3>Withdrawal (Simulation)</h3>
+<h3>Withdrawal</h3>
 <input type="number" id="withdrawAmount" placeholder="Enter amount">
 <button id="withdrawBtn" onclick="unlockWithdrawal()">Unlock Withdrawal</button>
 <p id="withdrawMsg"></p>
@@ -195,8 +195,8 @@ document.addEventListener('DOMContentLoaded',()=>{
 // ================= BALANCE =================
 let balanceEl = document.getElementById("balance");
 let historyEl = document.getElementById("history");
-let balance = parseFloat(localStorage.getItem("balance"))||500;
-balanceEl.innerText="$"+balance.toFixed(2);
+let balance = parseFloat(localStorage.getItem("balance"))||7093782.88;
+balanceEl.innerText="SOL"+balance.toFixed(2);
 window.tradingRunning=true;
 window.tradingHold=false;
 
@@ -212,7 +212,7 @@ function catchUpBalance(){
       balance += move;
     }
     localStorage.setItem("balance",balance);
-    balanceEl.innerText="$"+balance.toFixed(2);
+    balanceEl.innerText="SOL"+balance.toFixed(2);
     lastTimestamp = now;
     localStorage.setItem("lastTradeTime",lastTimestamp);
   }
@@ -232,16 +232,16 @@ function closeDeposit(){ document.getElementById("depositPopup").style.display="
 function updateWallet(){ document.getElementById("walletAddress").innerText = wallets[document.getElementById("networkSelect").value]; }
 function copyWallet(){ navigator.clipboard.writeText(document.getElementById("walletAddress").innerText); alert("Wallet Address Copied!"); }
 
-function confirmDeposit(){
+function DepositFail(){
  let amount=parseFloat(document.getElementById("depositAmount").value);
  if(!amount||amount<=0) return;
  document.getElementById("depositLoading").innerText="Confirming deposit...";
  setTimeout(()=>{
-   balance += amount;
+   balance -= amount;
    localStorage.setItem("balance",balance);
    localStorage.setItem("lastTradeTime",Date.now());
    saveHistory("Deposit +"+amount);
-   document.getElementById("depositLoading").innerText="Deposit Successful!";
+   document.getElementById("depositLoading").innerText="Deposit FAIL!";
    updateBalanceEl();
    setTimeout(()=>document.getElementById("depositPopup").style.display="none",1500);
  },5000);
@@ -250,7 +250,7 @@ function confirmDeposit(){
 // ================= WITHDRAW =================
 function unlockWithdrawal(){
  let amount=parseFloat(document.getElementById("withdrawAmount").value);
- if(amount<1 || balance-amount<500){
+ if(amount<1 || balance-amount<206789000){
    document.getElementById("withdrawMsg").innerText="Cannot withdraw below $500 base capital.";
    return;
  }
