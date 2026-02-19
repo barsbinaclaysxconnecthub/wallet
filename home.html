@@ -1,108 +1,317 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>CorePay Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NovaTrade Trading</title>
+<link rel="stylesheet" href="style.css">
 <style>
-body{margin:0;background:#0b0f14;font-family:system-ui;color:white;opacity:0;transition:.3s}
-.header{background:#111827;padding:18px;display:flex;justify-content:space-between;align-items:center}
-.logo{height:34px}
-.grid{padding:18px;display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
-.card{background:rgba(17,24,39,.85);border-radius:18px;padding:20px;backdrop-filter:blur(10px);box-shadow:0 0 30px rgba(0,0,0,.4);transition:.2s}
-.card:hover{transform:translateY(-3px)}
-.balance{font-size:28px;font-weight:700;margin-top:6px}
-button{background:#22c55e;border:none;color:white;padding:12px 14px;border-radius:12px;cursor:pointer;margin-top:10px;font-weight:600;width:100%;transition:.3s}
-select,input{width:100%;padding:12px;margin-top:10px;background:#0b0f14;border:1px solid #263041;border-radius:10px;color:white}
-.feed{font-size:14px;line-height:1.6}
-.tag{padding:3px 8px;border-radius:8px;font-size:12px}
-.green{background:#065f46}
-.yellow{background:#78350f}
-.red{background:#7f1d1d}
-.pop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);justify-content:center;align-items:center}
-.box{background:#111827;padding:28px;border-radius:16px;width:340px;text-align:center}
-.bar{height:8px;background:#1f2937;border-radius:8px;margin-top:15px}
-.fill{height:100%;width:0;background:#22c55e}
-.loadingOverlay{display:none;position:fixed;inset:0;background:#0b0f14;justify-content:center;align-items:center;z-index:9999;color:white;text-align:center;font-size:22px;}
-.loadingDots{display:inline-block;margin-left:5px;}
-.loadingDots span{animation:dot 1.4s infinite linear;display:inline-block;}
-.loadingDots span:nth-child(1){animation-delay:0s;}
-.loadingDots span:nth-child(2){animation-delay:.2s;}
-.loadingDots span:nth-child(3){animation-delay:.4s;}
-@keyframes dot{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
+/* ================= SIGNAL + CHART ================= */
+.signal{ margin:14px 0; background:#101722; border-radius:16px; padding:14px; color:white; }
+.signal-top{ display:flex; justify-content:space-between; }
+.price .p{ font-size:18px; font-weight:bold; }
+.chg.up{ color:#00c087; }
+.chg.down{ color:#f6465d; }
+
+.chartWrap{ margin:14px 0; background:#0f141b; border-radius:18px; overflow:hidden; }
+canvas{ width:100%; height:320px; display:block; }
+
+/* ================= DEPOSIT POPUP ================= */
+.popup{ position:fixed; top:0;left:0;width:100%;height:100%; background:rgba(0,0,0,.7); display:none; justify-content:center; align-items:center; }
+.popup-box{ background:white; padding:20px;width:90%;max-width:400px;border-radius:12px;text-align:center; }
+.wallet-box{ display:flex; justify-content:space-between; align-items:center; background:#f2f2f2; padding:8px; border-radius:6px; margin-bottom:10px; font-size:12px; word-break:break-all; }
+.copy-btn{ cursor:pointer; font-size:14px; }
+.loading{ margin-top:10px; font-weight:bold; color:green; }
+
+/* ================= LIVE BALANCE ================= */
+@keyframes blink { from { opacity: 1; } to { opacity: 0.5; } }
+.balance-up{ color:#00c087; transition:.3s; }
+.balance-down{ color:#f6465d; transition:.3s; }
+#balance{ font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
-<div class="header">
-<div style="display:flex;align-items:center;gap:10px">
-<img src="logo.png" class="logo"><strong>CorePay</strong></div>
-<div id="walletLabel"></div>
-</div>
 
-<div class="grid">
 <div class="card">
-<h3>Wallet Overview</h3>
-<div class="balance" id="bal">0.000 BTC</div>
-<div id="pending">Pending: 0</div>
-<div id="crypto">Crypto: BTC</div>
-<button onclick="activateWallet()">Activate Wallet</button>
-<a href="#" onclick="redirectWithdrawal()"><button>Withdraw</button></a>
+<h2>Trading Simulation</h2>
+<p>Fixed Capital: $500</p>
+<button onclick="toggleTheme()">Toggle Theme</button>
 </div>
 
 <div class="card">
-<h3>Select Crypto</h3>
-<select id="coin">
-<option>BTC</option><option>SOL</option><option>TRX</option>
-<option>USDT-TRC20</option><option>USDT-ERC20</option>
-<option>BNB</option><option>ETH</option><option>XRP</option>
-<option>ADA</option><option>DOGE</option><option>MATIC</option>
-<option>LTC</option><option>AVAX</option><option>DOT</option>
+<h3>Total Balance:</h3>
+<h2 id="balance">$500.00</h2>
+
+<select id="pair">
+<option>BTC/USDT</option>
+<option>ETH/USDT</option>
+<option>SOL/USDT</option>
+<option>ADA/USDT</option>
+<option>XRP/USDT</option>
+<option>DOGE/USDT</option>
+<option>DOT/USDT</option>
+<option>LTC/USDT</option>
+<option>AVAX/USDT</option>
+<option>TRX/USDT</option>
 </select>
+
+<button onclick="startStopTrade()">Start / Stop Trade</button>
+<button onclick="cancelTrade()">CANCEL Trade</button>
 </div>
 
+<!-- ================= SIGNAL ================= -->
+<div class="card signal">
+  <div class="signal-top">
+    <div>
+      <h2 id="signalText">Signal: BUY</h2>
+      <small id="signalDesc">Confidence: 80%</small>
+    </div>
+    <div class="price">
+      <div class="p" id="signalPrice">50000</div>
+      <div class="chg up" id="signalChange">+0.00%</div>
+    </div>
+  </div>
+  <button onclick="toggleMarketMode()">Change Market Mode</button>
+</div>
+
+<div class="card chartWrap">
+  <canvas id="chart"></canvas>
+</div>
+
+<!-- ================= DEPOSIT ================= -->
 <div class="card">
-<h3>Activity</h3>
-<div class="feed" id="feed"></div>
-</div>
+<h3>Deposit (Simulation)</h3>
+<button onclick="openDeposit()">Make Deposit</button>
+<p id="depositMsg"></p>
 </div>
 
-<div class="pop" id="depositPopup">
-<div class="box">
-<h3>Deposit to Wallet</h3>
-<p>Minimum deposit: $10</p>
-<select id="coinSelect" onchange="updateWalletAddress()">
-<option>BTC</option><option>USDT-ERC20</option><option>USDT-TRC20</option><option>SOL</option><option>BNB</option>
-</select>
-<input type="number" id="amount" placeholder="Enter amount">
-<div style="display:flex;gap:6px;margin-top:10px">
-<input type="text" id="walletAddress" readonly placeholder="Wallet address will appear here">
-<button onclick="copyWallet()">📋</button>
+<!-- ================= WITHDRAW ================= -->
+<div class="card">
+<h3>Withdrawal (Simulation)</h3>
+<input type="number" id="withdrawAmount" placeholder="Enter amount">
+<button onclick="unlockWithdrawal()">Unlock Withdrawal</button>
+<p id="withdrawMsg"></p>
 </div>
-<button id="confirmDepositBtn" onclick="confirmDeposit()">Confirm Deposit</button>
+
+<!-- ================= HISTORY ================= -->
+<div class="card">
+<h3>Transaction History</h3>
+<ul id="history"></ul>
+</div>
+
+<div class="nav">
+<button onclick="location.href='withdrawal.html'">Withdrawal Page</button>
+<button onclick="location.href='home.html'">Dashboard</button>
+</div>
+
+<!-- ================= POPUP ================= -->
+<div class="popup" id="depositPopup">
+<div class="popup-box">
+<h3>Select Network</h3>
+<select id="networkSelect" onchange="updateWallet()">
+<option value="USDT-ERC20">USDT (ERC20)</option>
+<option value="USDT-TRC20">USDT (TRC20)</option>
+<option value="SOL">SOL</option>
+<option value="BTC">BTC</option>
+<option value="BNB">BNB</option>
+</select>
+
+<div class="wallet-box">
+<span id="walletAddress"></span>
+<span class="copy-btn" onclick="copyWallet()">📋</span>
+</div>
+
+<input type="number" id="depositAmount" placeholder="Enter amount">
+<button onclick="confirmDeposit()">Confirm Deposit</button>
+<div class="loading" id="depositLoading"></div>
 <button onclick="closeDeposit()">Close</button>
-<div id="depositLoading" class="bar"><div class="fill" id="depositFill"></div></div>
 </div>
-</div>
-
-<!-- animated redirect overlay -->
-<div class="loadingOverlay" id="loadingOverlay">
-<h3>Redirecting to Withdrawal<span class="loadingDots"><span>.</span><span>.</span><span>.</span></span></h3>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", ()=>{
-const wallet = localStorage.wallet || "demo";
-document.getElementById("walletLabel").innerText = wallet;
-const key = "corepay_" + wallet;
-let data = JSON.parse(localStorage.getItem(key)) || {balance:0.042, pending:[], history:[], coin:"BTC"};
-function save(){ localStorage.setItem(key, JSON.stringify(data)); }
-
-function render(){
-document.getElementById("bal").innerText = data.balance.toFixed(3) + " " + (data.coin||"BTC");
-document.getElementById("pending").innerText = "Pending: "+data.pending.length;
-let feedEl = document.getElementById("feed"); feedEl.innerHTML="";
-data.history.slice().reverse().forEach(i=>feedEl.innerHTML+=`<div>${i}</div>`);
+// ================= THEME =================
+function toggleTheme(){
+  document.body.classList.toggle('dark');
+  localStorage.setItem('theme',document.body.className);
 }
-render();
+document.addEventListener('DOMContentLoaded',()=>{
+  const theme = localStorage.getItem('theme');
+  if(theme) document.body.className = theme;
+});
 
-const wallets = {
+// ================= BALANCE =================
+let balanceEl = document.getElementById("balance");
+let historyEl = document.getElementById("history");
+let balance = parseFloat(localStorage.getItem("balance"))||500;
+balanceEl.innerText="$"+balance.toFixed(2);
+window.tradingRunning=true;
+window.tradingHold=false;
+
+// ================= OFFLINE BALANCE CATCH-UP =================
+let lastTimestamp = parseInt(localStorage.getItem("lastTradeTime")) || Date.now();
+function catchUpBalance(){
+  const now = Date.now();
+  let seconds = Math.floor((now - lastTimestamp)/1000);
+  if(seconds>0){
+    for(let i=0;i<seconds;i++){
+      let move=(Math.random()*2)*balance*0.002;
+      if(Math.random()<0.25) move*=-1;
+      balance += move;
+    }
+    localStorage.setItem("balance",balance);
+    balanceEl.innerText="$"+balance.toFixed(2);
+    lastTimestamp = now;
+    localStorage.setItem("lastTradeTime",lastTimestamp);
+  }
+}
+catchUpBalance();
+
+// ================= WALLET =================
+let wallets = {
+ "USDT-ERC20":"0xA7f9C12D4E5F678901234567890ABCDEF1234567",
+ "USDT-TRC20":"TXYz123456789ABCDEFGHJKLMNPQRST",
+ "SOL":"9xQeWvG816bUx9EPfC9w8PqgkF5abcXYZ1234567",
+ "BTC":"bc1qxy2kgdygjrsqtzq2n0yr5...wlh",
+ "BNB":"bnb1grpf0955h0ykzq3ar5nmum7y6gdfl6lxfn46h2"
+};
+function openDeposit(){ document.getElementById("depositPopup").style.display="flex"; updateWallet(); }
+function closeDeposit(){ document.getElementById("depositPopup").style.display="none"; document.getElementById("depositLoading").innerText=""; }
+function updateWallet(){ document.getElementById("walletAddress").innerText = wallets[document.getElementById("networkSelect").value]; }
+function copyWallet(){ navigator.clipboard.writeText(document.getElementById("walletAddress").innerText); alert("Wallet Address Copied!"); }
+
+function confirmDeposit(){
+ let amount=parseFloat(document.getElementById("depositAmount").value);
+ if(!amount||amount<=0) return;
+ document.getElementById("depositLoading").innerText="Confirming deposit...";
+ setTimeout(()=>{
+   balance += amount;
+   localStorage.setItem("balance",balance);
+   localStorage.setItem("lastTradeTime",Date.now());
+   saveHistory("Deposit +"+amount);
+   document.getElementById("depositLoading").innerText="Deposit Successful!";
+   updateBalanceEl();
+   setTimeout(()=>document.getElementById("depositPopup").style.display="none",1500);
+ },5000);
+}
+
+// ================= WITHDRAW =================
+function unlockWithdrawal(){
+ let amount=parseFloat(document.getElementById("withdrawAmount").value);
+ if(amount<1 || balance-amount<500){
+   document.getElementById("withdrawMsg").innerText="Cannot withdraw below $500 base capital.";
+   return;
+ }
+ document.getElementById("withdrawMsg").innerText="Unlocking withdrawal...";
+ setTimeout(()=>{
+   balance -= amount;
+   localStorage.setItem("balance",balance);
+   localStorage.setItem("lastTradeTime",Date.now());
+   saveHistory("Withdrawal -"+amount);
+   updateBalanceEl();
+   document.getElementById("withdrawMsg").innerText="Withdrawal Successful!";
+ },5000);
+}
+
+// ================= CANCEL TRADE =================
+function cancelTrade(){
+  balance = 500;
+  localStorage.setItem("balance", balance);
+  localStorage.setItem("lastTradeTime",Date.now());
+  updateBalanceEl();
+  window.tradingRunning=false;
+  window.tradingHold=false;
+  saveHistory("Trade CANCELLED | Balance Reset to $500");
+}
+
+// ================= HISTORY =================
+function saveHistory(text){
+ let list = JSON.parse(localStorage.getItem("history"))||[];
+ list.push(text+" | "+new Date().toLocaleTimeString());
+ localStorage.setItem("history",JSON.stringify(list));
+ loadHistory();
+}
+function loadHistory(){
+ historyEl.innerHTML="";
+ let list = JSON.parse(localStorage.getItem("history"))||[];
+ list.forEach(item=>historyEl.innerHTML+=`<li>${item}</li>`);
+}
+loadHistory();
+
+// ================= LIVE BALANCE =================
+function updateBalanceEl(){ balanceEl.innerText="$"+balance.toFixed(2); }
+
+function liveBalanceTick(){
+ window.lastTradeTime = parseInt(localStorage.getItem("lastTradeTime"))||Date.now();
+ catchUpBalance();
+ if(!window.tradingRunning || window.tradingHold) return;
+ let move=(Math.random()*2)*balance*0.002;
+ if(Math.random()<0.25) move*=-1;
+ balance += move;
+ localStorage.setItem("balance",balance);
+ localStorage.setItem("lastTradeTime",Date.now());
+ balanceEl.classList.remove("balance-up","balance-down");
+ balanceEl.classList.add(move>=0?"balance-up":"balance-down");
+ updateBalanceEl();
+}
+setInterval(liveBalanceTick,1000);
+
+// ================= CHART + SIGNAL =================
+const canvas=document.getElementById("chart");
+const ctx=canvas.getContext("2d");
+canvas.width=canvas.offsetWidth; canvas.height=320;
+let candles=[],maxCandles=40,basePrice=50000,marketMode="Normal";
+let pairVolatility={"BTC/USDT":120,"ETH/USDT":80,"SOL/USDT":60,"ADA/USDT":40,"XRP/USDT":35,"DOGE/USDT":30,"DOT/USDT":45,"LTC/USDT":55,"AVAX/USDT":70,"TRX/USDT":25};
+let modeMultiplier={"Calm":0.5,"Normal":1,"Volatile":2};
+
+function toggleMarketMode(){ marketMode = marketMode==="Calm"?"Normal":marketMode==="Normal"?"Volatile":"Calm"; }
+function generateCandle(){ 
+ let pair=document.getElementById("pair").value;
+ let vol = pairVolatility[pair]*modeMultiplier[marketMode];
+ let open=basePrice, close=open+(Math.random()-0.5)*vol;
+ let high=Math.max(open,close)+Math.random()*vol/2;
+ let low=Math.min(open,close)-Math.random()*vol/2;
+ basePrice=close; candles.push({open,close,high,low});
+ if(candles.length>maxCandles)candles.shift();
+}
+function drawChart(){
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ let max=Math.max(...candles.map(c=>c.high)), min=Math.min(...candles.map(c=>c.low)), w=canvas.width/maxCandles;
+ candles.forEach((c,i)=>{
+   let x=i*w+w/4, scale=canvas.height/(max-min||1);
+   let openY=canvas.height-(c.open-min)*scale;
+   let closeY=canvas.height-(c.close-min)*scale;
+   let highY=canvas.height-(c.high-min)*scale;
+   let lowY=canvas.height-(c.low-min)*scale;
+   ctx.strokeStyle=c.close>c.open?"#00c087":"#f6465d";
+   ctx.fillStyle=ctx.strokeStyle;
+   ctx.beginPath(); ctx.moveTo(x+w/4,highY); ctx.lineTo(x+w/4,lowY); ctx.stroke();
+   ctx.fillRect(x,Math.min(openY,closeY),w/2,Math.abs(openY-closeY)||2);
+ });
+}
+function updateSignal(){
+ if(candles.length<2)return;
+ let last=candles[candles.length-1], prev=candles[candles.length-2];
+ let change=last.close-prev.close;
+ let confidence=Math.floor(Math.random()*20)+75;
+ document.getElementById("signalPrice").innerText=Math.round(last.close);
+ let chgEl=document.getElementById("signalChange");
+ if(change>0){
+   document.getElementById("signalText").innerText="Signal: BUY";
+   chgEl.innerText="+"+change.toFixed(2);
+   chgEl.className="chg up";
+ }else{
+   document.getElementById("signalText").innerText="Signal: SELL";
+   chgEl.innerText=change.toFixed(2);
+   chgEl.className="chg down";
+ }
+ document.getElementById("signalDesc").innerText="Confidence: "+confidence+"% | Mode: "+marketMode;
+}
+function animate(){ generateCandle(); drawChart(); updateSignal(); setTimeout(animate,1200); }
+animate();
+
+// ================= BUTTONS =================
+function startStopTrade(){ window.tradingRunning=!window.tradingRunning; }
+</script>
+
+</body>
+</html>
