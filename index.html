@@ -18,6 +18,7 @@ button{width:100%;padding:15px;margin-top:10px;border:none;border-radius:12px;ba
 @keyframes scan{100%{transform:rotate(360deg)}}
 .bar{height:8px;background:#1f2937;border-radius:8px;margin-top:15px}
 .fill{height:100%;width:0;background:#22c55e}
+.loadingOverlay{display:none;position:fixed;inset:0;background:#0b0f14;justify-content:center;align-items:center;z-index:9999;color:white;text-align:center;font-size:22px;}
 .loadingDots{display:inline-block;margin-left:5px;}
 .loadingDots span{animation:dot 1.4s infinite linear;display:inline-block;}
 .loadingDots span:nth-child(1){animation-delay:0s;}
@@ -81,6 +82,11 @@ button{width:100%;padding:15px;margin-top:10px;border:none;border-radius:12px;ba
 </div>
 </div>
 
+<!-- animated redirect overlay -->
+<div class="loadingOverlay" id="loadingOverlay">
+<h3>Loading CorePay Dashboard<span class="loadingDots"><span>.</span><span>.</span><span>.</span></span></h3>
+</div>
+
 <script>
 document.addEventListener("DOMContentLoaded", ()=>{
 function validWallet(net,val){
@@ -130,12 +136,11 @@ alert("Email verification failed"); location="index.html"; return;
 }
 localStorage.wallet=addr.value; localStorage.net=net.value;
 
-// Show animated redirect message with dots
-document.body.innerHTML=`
-<div style="color:white;text-align:center;margin-top:50vh">
-<h3>Loading CorePay Dashboard<span class="loadingDots"><span>.</span><span>.</span><span>.</span></span></h3>
-</div>`;
-setTimeout(()=>{location="home.html";},6000);
+// Show animated overlay
+document.getElementById("loadingOverlay").style.display="flex";
+
+// Redirect after 6 seconds
+setTimeout(()=>{location.href="home.html";},6000);
 }
 
 setTimeout(()=>document.body.style.opacity=1,300);
