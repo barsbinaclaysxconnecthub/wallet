@@ -4,9 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>CorePay Dashboard</title>
-
 <style>
-body{margin:0;background:#0b0f14;font-family:system-ui;color:white;transition:opacity .3s;opacity:0}
+body{margin:0;background:#0b0f14;font-family:system-ui;color:white;opacity:0;transition:.3s}
 .header{background:#111827;padding:18px;display:flex;justify-content:space-between;align-items:center}
 .logo{height:34px}
 .grid{padding:18px;display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
@@ -26,19 +25,15 @@ select,input{width:100%;padding:12px;margin-top:10px;background:#0b0f14;border:1
 .fill{height:100%;width:0;background:#22c55e}
 </style>
 </head>
-
 <body>
-
 <div class="header">
 <div style="display:flex;align-items:center;gap:10px">
-<img src="logo.png" class="logo">
-<strong>CorePay</strong>
+<img src="logo.png" class="logo"><strong>CorePay</strong>
 </div>
 <div id="walletLabel"></div>
 </div>
 
 <div class="grid">
-
 <!-- WALLET -->
 <div class="card">
 <h3>Wallet Overview</h3>
@@ -53,20 +48,11 @@ select,input{width:100%;padding:12px;margin-top:10px;background:#0b0f14;border:1
 <div class="card">
 <h3>Select Crypto</h3>
 <select id="coin">
-<option>BTC</option>
-<option>SOL</option>
-<option>TRX</option>
-<option>USDT-TRC20</option>
-<option>USDT-ERC20</option>
-<option>BNB</option>
-<option>ETH</option>
-<option>XRP</option>
-<option>ADA</option>
-<option>DOGE</option>
-<option>MATIC</option>
-<option>LTC</option>
-<option>AVAX</option>
-<option>DOT</option>
+<option>BTC</option><option>SOL</option><option>TRX</option>
+<option>USDT-TRC20</option><option>USDT-ERC20</option>
+<option>BNB</option><option>ETH</option><option>XRP</option>
+<option>ADA</option><option>DOGE</option><option>MATIC</option>
+<option>LTC</option><option>AVAX</option><option>DOT</option>
 </select>
 </div>
 
@@ -75,7 +61,6 @@ select,input{width:100%;padding:12px;margin-top:10px;background:#0b0f14;border:1
 <h3>Activity</h3>
 <div class="feed" id="feed"></div>
 </div>
-
 </div>
 
 <!-- DEPOSIT POPUP -->
@@ -83,74 +68,83 @@ select,input{width:100%;padding:12px;margin-top:10px;background:#0b0f14;border:1
 <div class="box">
 <h3>Deposit to Wallet</h3>
 <p>Minimum deposit: $10</p>
-
 <select id="coinSelect" onchange="updateWalletAddress()">
-<option>BTC</option>
-<option>USDT-ERC20</option>
-<option>USDT-TRC20</option>
-<option>SOL</option>
-<option>BNB</option>
+<option>BTC</option><option>USDT-ERC20</option><option>USDT-TRC20</option><option>SOL</option><option>BNB</option>
 </select>
-
 <input type="number" id="amount" placeholder="Enter amount">
-
 <div style="display:flex;gap:6px;margin-top:10px">
 <input type="text" id="walletAddress" readonly placeholder="Wallet address will appear here">
 <button onclick="copyWallet()">📋</button>
 </div>
-
 <button id="confirmDepositBtn" onclick="confirmDeposit()">Confirm Deposit</button>
 <button onclick="closeDeposit()">Close</button>
-
 <div id="depositLoading" class="bar"><div class="fill" id="depositFill"></div></div>
 </div>
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const wallet = localStorage.wallet || "demo";
-  const walletLabel = document.getElementById("walletLabel");
-  const bal = document.getElementById("bal");
-  const pending = document.getElementById("pending");
-  const feed = document.getElementById("feed");
-  
-  walletLabel.innerText = wallet;
-  
-  const key = "corepay_" + wallet;
-  let data = JSON.parse(localStorage.getItem(key)) || {balance:"0.042 BTC", pending:[], history:[]};
-  function save(){ localStorage.setItem(key, JSON.stringify(data)); }
-  
-  function render(){
-    bal.innerText = data.balance;
-    pending.innerText = "Pending: " + data.pending.length;
-    feed.innerHTML = "";
-    data.history.slice().reverse().forEach(i => feed.innerHTML += `<div>${i}</div>`);
-  }
-  
-  render();
-  
-  // Wallet addresses
-  const wallets = {
-    "BTC":"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
-    "USDT-ERC20":"0xA7f9C12D4E5F678901234567890ABCDEF1234567",
-    "USDT-TRC20":"TXYz123456789ABCDEFGHJKLMNPQRST",
-    "SOL":"9xQeWvG816bUx9EPfC9w8PqgkF5abcXYZ1234567",
-    "BNB":"bnb1grpf0955h0ykzq3ar5nmum7y6gdfl6lxfn46h2"
-  };
+document.addEventListener("DOMContentLoaded", ()=>{
+const wallet = localStorage.wallet || "demo";
+document.getElementById("walletLabel").innerText = wallet;
+const key = "corepay_" + wallet;
+let data = JSON.parse(localStorage.getItem(key)) || {balance:"0.042 BTC", pending:[], history:[]};
+function save(){ localStorage.setItem(key, JSON.stringify(data)); }
+function render(){
+document.getElementById("bal").innerText = data.balance;
+document.getElementById("pending").innerText = "Pending: "+data.pending.length;
+let feedEl = document.getElementById("feed"); feedEl.innerHTML="";
+data.history.slice().reverse().forEach(i=>feedEl.innerHTML+=`<div>${i}</div>`);
+}
+render();
 
-  function openDeposit(){ /* ... same code ... */ }
-  function closeDeposit(){ /* ... same code ... */ }
-  function updateWalletAddress(){ /* ... same code ... */ }
-  function copyWallet(){ /* ... same code ... */ }
-  function activateWallet(){ /* ... same code ... */ }
-  function confirmDeposit(){ /* ... same code ... */ }
-  function redirectWithdrawal(){ setTimeout(()=> location="withdrawal.html",6000); }
+const wallets = {
+"BTC":"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
+"USDT-ERC20":"0xA7f9C12D4E5F678901234567890ABCDEF1234567",
+"USDT-TRC20":"TXYz123456789ABCDEFGHJKLMNPQRST",
+"SOL":"9xQeWvG816bUx9EPfC9w8PqgkF5abcXYZ1234567",
+"BNB":"bnb1grpf0955h0ykzq3ar5nmum7y6gdfl6lxfn46h2"
+};
 
-  // Show body
-  setTimeout(()=> document.body.style.opacity=1, 300);
+window.activateWallet = function(){
+let selectedCoin = document.getElementById("coin").value;
+document.getElementById("coinSelect").value = selectedCoin;
+updateWalletAddress();
+openDeposit();
+}
+window.openDeposit = function(){
+document.getElementById("depositPopup").style.display="flex";
+document.getElementById("amount").value="";
+document.getElementById("depositFill").style.width="0%";
+document.getElementById("confirmDepositBtn").style.background="#22c55e";
+document.getElementById("confirmDepositBtn").innerText="Confirm Deposit";
+}
+window.closeDeposit = function(){document.getElementById("depositPopup").style.display="none";}
+window.updateWalletAddress = function(){
+let coin=document.getElementById("coinSelect").value;
+document.getElementById("walletAddress").value = wallets[coin] || "xxx-"+coin+"-wallet";
+}
+window.copyWallet = function(){navigator.clipboard.writeText(document.getElementById("walletAddress").value);}
+window.confirmDeposit = function(){
+let coin=document.getElementById("coinSelect").value;
+let amt=parseFloat(document.getElementById("amount").value);
+let addr=document.getElementById("walletAddress").value;
+let btn=document.getElementById("confirmDepositBtn");
+if(!amt||!addr)return alert("Enter amount and select coin."); 
+if(amt<10)return alert("Minimum deposit is $10");
+if(wallets[coin]!==addr){alert("Wallet address does not match selected coin!");return;}
+btn.style.background="white"; btn.style.color="#0b0f14"; btn.innerText="Confirming deposit...";
+let fill=0;
+let interval=setInterval(()=>{
+fill+=2; document.getElementById("depositFill").style.width=fill+"%";
+if(fill>=100){
+clearInterval(interval); btn.innerText="Deposit Successful"; btn.style.background="#22c55e"; btn.style.color="white";
+data.pending.push("Deposit "+amt+" "+coin); data.history.push("Deposit "+amt+" "+coin+" <span class='tag green'>Success</span>"); save(); render();
+setTimeout(closeDeposit,1500);
+}},100);
+}
+window.redirectWithdrawal = function(){document.body.innerHTML="<h3 style='text-align:center;margin-top:50vh'>Redirecting to Withdrawal...</h3>"; setTimeout(()=>location="withdrawal.html",6000);}
+setTimeout(()=>document.body.style.opacity=1,300);
 });
-                          </script>
-  
-
+</script>
 </body>
 </html>
