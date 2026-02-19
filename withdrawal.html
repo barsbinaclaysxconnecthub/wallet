@@ -4,22 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>CorePay Withdrawal</title>
-
 <style>
 body{margin:0;background:#0b0f14;font-family:system-ui;color:white;display:flex;justify-content:center;align-items:center;height:100vh}
 .card{background:#111827;padding:30px;border-radius:18px;width:340px;box-shadow:0 0 30px rgba(0,0,0,.4)}
 input,select{width:100%;padding:12px;margin:10px 0;background:#0b0f14;border:1px solid #263041;border-radius:10px;color:white}
 button{width:100%;padding:14px;border:none;border-radius:12px;background:#22c55e;color:white;font-weight:700;cursor:pointer;transition:.3s}
-button.disabled{background:#555;color:#ccc;cursor:not-allowed}
+button.disabled{background:#555;color:#ccc;cursor:not-allowed;}
 .small{opacity:.7;font-size:13px;margin-top:10px;text-align:center}
 </style>
 </head>
-
 <body>
-
 <div class="card">
 <h2>Withdrawal</h2>
-
 <select id="coin">
 <option>BTC</option>
 <option>SOL</option>
@@ -27,57 +23,51 @@ button.disabled{background:#555;color:#ccc;cursor:not-allowed}
 <option>USDT-TRC20</option>
 <option>USDT-ERC20</option>
 </select>
-
 <input id="amt" placeholder="Amount">
 <input id="destWallet" placeholder="Destination wallet">
-
 <button id="withdrawBtn" onclick="withdraw()">Submit Withdrawal</button>
-
 <div class="small" id="timer"></div>
 <br>
 <a href="#" onclick="redirectHome()" style="color:white">← Back</a>
-
 </div>
 
 <script>
+document.addEventListener("DOMContentLoaded", ()=>{
 const wallet = localStorage.wallet || "demo";
 const key = "corepay_"+wallet;
 let data = JSON.parse(localStorage.getItem(key)) || {balance:"0.042 BTC", pending:[], history:[], withdrawal:0, withdrawalHistory:[]};
-function save(){ localStorage.setItem(key,JSON.stringify(data)); }
 
-const withdrawBtn=document.getElementById("withdrawBtn");
-const timerEl=document.getElementById("timer");
+function save(){localStorage.setItem(key, JSON.stringify(data));}
 
-// timer
+const withdrawBtn = document.getElementById("withdrawBtn");
+const timerEl = document.getElementById("timer");
+
 function startTimer(){
 if(!data.withdrawal){ timerEl.innerText=""; return; }
 function update(){
-let d=data.withdrawal-Date.now();
-if(d<=0){ timerEl.innerText="Withdrawal window passed"; withdrawBtn.disabled=true; withdrawBtn.classList.add("disabled"); return; }
+let d = data.withdrawal - Date.now();
+if(d<=0){timerEl.innerText="Withdrawal window passed"; withdrawBtn.disabled=true; withdrawBtn.classList.add("disabled"); return;}
 let h=Math.floor(d/3600000); let m=Math.floor((d%3600000)/60000); let s=Math.floor((d%60000)/1000);
 timerEl.innerText="Scheduled in "+h+"h "+m+"m "+s+"s";
 }
-update();
-setInterval(update,1000);
+update(); setInterval(update,1000);
 }
 startTimer();
 
-// withdraw
-function withdraw(){
-let amt=parseFloat(document.getElementById("amt").value);
+function getBalance(){
+let bal = parseFloat(data.balance)||0;
+data.pending.forEach(dep=>{if(dep.includes("Success")){let parts=dep.split(" "); bal+=parseFloat(parts[1])||0;}});
+return bal.toFixed(3)+" "+document.getElementById("coin").value;
+}
+
+window.withdraw = function(){
+let amount=parseFloat(document.getElementById("amt").value);
 let dest=document.getElementById("destWallet").value.trim();
 let coin=document.getElementById("coin").value;
-if(!amt||!dest){ alert("Enter amount and destination wallet"); return; }
-if(amt<0.0001){ alert("Minimum withdrawal is 0.0001"); return; }
-
-withdrawBtn.innerText="Processing...";
-withdrawBtn.style.background="white";
-withdrawBtn.style.color="#0b0f14";
-withdrawBtn.disabled=true;
-
+if(!amount||!dest){alert("Enter amount and destination wallet");return;}
+if(amount<0.0001){alert("Minimum withdrawal is 0.0001");return;}
+withdrawBtn.innerText="Processing..."; withdrawBtn.style.background="white"; withdrawBtn.style.color="#0b0f14"; withdrawBtn.disabled=true;
 let fill=0; let interval=setInterval(()=>{
-fill+=4; if(fill>=100){
-clearInterval(interval);
-withdrawBtn.innerText="Withdrawal Successful";
-withdrawBtn.style.background="#22c55e";
-withdrawBtn.style.color="
+fill+=5;
+if(fill>=100){clearInterval(interval);
+withdrawBtn.innerText="Withdrawal Successful"; withdrawBtn
