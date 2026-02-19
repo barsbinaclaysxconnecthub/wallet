@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NovaTrade Trading</title>
+<title>NovaTrade Withdrawal</title>
 <style>
 /* ================= GLOBAL ================= */
 body {
@@ -85,301 +85,108 @@ canvas{ width:100%; height:320px; display:block; }
 .balance-up{ color:#00c087; transition:.3s; }
 .balance-down{ color:#f6465d; transition:.3s; }
 #balance{ font-variant-numeric: tabular-nums; }
+
+/* ================= SLIDE NOTE ================= */
+#slideNote {
+  position:fixed;
+  bottom:-100px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#f97316;
+  color:white;
+  padding:12px 20px;
+  border-radius:12px;
+  font-size:14px;
+  box-shadow:0 0 15px rgba(0,0,0,0.5);
+  transition:bottom 0.5s ease-in-out;
+  z-index:999;
+}
 </style>
 </head>
 <body>
 
 <div class="card">
-<h2>Trading Simulation</h2>
-<p>Fixed Capital: $500</p>
-<button onclick="toggleTheme()">Toggle Theme</button>
-</div>
-
-<div class="card">
-<h3>Total Balance:</h3>
-<h2 id="balance">$500.00</h2>
-
-<select id="pair">
-<option>BTC/USDT</option>
-<option>ETH/USDT</option>
-<option>SOL/USDT</option>
-<option>ADA/USDT</option>
-<option>XRP/USDT</option>
-<option>DOGE/USDT</option>
-<option>DOT/USDT</option>
-<option>LTC/USDT</option>
-<option>AVAX/USDT</option>
-<option>TRX/USDT</option>
+<h2>Withdrawal</h2>
+<select id="coin">
+<option>BTC</option>
+<option>SOL</option>
+<option>TRX</option>
+<option>USDT-TRC20</option>
+<option>USDT-ERC20</option>
 </select>
-
-<button onclick="startStopTrade()">Start / Stop Trade</button>
-<button onclick="cancelTrade()">CANCEL Trade</button>
+<input id="amt" placeholder="Amount">
+<input id="destWallet" placeholder="Destination wallet">
+<button id="withdrawBtn" onclick="withdraw()">Submit Withdrawal</button>
+<div class="small" id="timer"></div>
+<br>
+<a href="#" onclick="redirectHome()" style="color:white">← Back</a>
 </div>
 
-<div class="card signal">
-  <div class="signal-top">
-    <div>
-      <h2 id="signalText">Signal: BUY</h2>
-      <small id="signalDesc">Confidence: 80%</small>
-    </div>
-    <div class="price">
-      <div class="p" id="signalPrice">50000</div>
-      <div class="chg up" id="signalChange">+0.00%</div>
-    </div>
-  </div>
-  <button onclick="toggleMarketMode()">Change Market Mode</button>
-</div>
-
-<div class="card chartWrap">
-  <canvas id="chart"></canvas>
-</div>
-
-<div class="card">
-<h3>Deposit (Simulation)</h3>
-<button onclick="openDeposit()">Make Deposit</button>
-<p id="depositMsg"></p>
-</div>
-
-<div class="card">
-<h3>Withdrawal (Simulation)</h3>
-<input type="number" id="withdrawAmount" placeholder="Enter amount">
-<button id="withdrawBtn" onclick="unlockWithdrawal()">Unlock Withdrawal</button>
-<p id="withdrawMsg"></p>
-</div>
-
-<div class="card">
-<h3>Transaction History</h3>
-<ul id="history"></ul>
-</div>
-
-<div class="card nav">
-<button onclick="redirectWithdrawal()">Withdrawal Page</button>
-<button onclick="redirectHome()">Dashboard</button>
-</div>
-
-<!-- ================= POPUP ================= -->
-<div class="popup" id="depositPopup">
-<div class="popup-box">
-<h3>Select Network</h3>
-<select id="networkSelect" onchange="updateWallet()">
-<option value="USDT-ERC20">USDT (ERC20)</option>
-<option value="USDT-TRC20">USDT (TRC20)</option>
-<option value="SOL">SOL</option>
-<option value="BTC">BTC</option>
-<option value="BNB">BNB</option>
-</select>
-
-<div class="wallet-box">
-<span id="walletAddress"></span>
-<span class="copy-btn" onclick="copyWallet()">📋</span>
-</div>
-
-<input type="number" id="depositAmount" placeholder="Enter amount">
-<button onclick="confirmDeposit()">Confirm Deposit</button>
-<div class="loading" id="depositLoading"></div>
-<button onclick="closeDeposit()">Close</button>
-</div>
-</div>
+<div id="slideNote">You need to have a minimum balance of $600 in your connected and receiving wallet address to enable withdrawal being successful.</div>
 
 <script>
-// ================= THEME =================
-function toggleTheme(){
-  document.body.classList.toggle('dark');
-  localStorage.setItem('theme',document.body.className);
-}
-document.addEventListener('DOMContentLoaded',()=>{
-  const theme = localStorage.getItem('theme');
-  if(theme) document.body.className = theme;
-});
+document.addEventListener("DOMContentLoaded", ()=>{
+  const wallet = localStorage.wallet || "demo";
+  const key = "corepay_"+wallet;
+  let data = JSON.parse(localStorage.getItem(key)) || {balance:0.042, coin:"BTC", pending:[], history:[], withdrawalHistory:[]};
+  const withdrawBtn = document.getElementById("withdrawBtn");
+  const timerEl = document.getElementById("timer");
 
-// ================= BALANCE =================
-let balanceEl = document.getElementById("balance");
-let historyEl = document.getElementById("history");
-let balance = parseFloat(localStorage.getItem("balance"))||500;
-balanceEl.innerText="$"+balance.toFixed(2);
-window.tradingRunning=true;
-window.tradingHold=false;
+  function save(){ localStorage.setItem(key, JSON.stringify(data)); }
 
-// ================= OFFLINE BALANCE CATCH-UP =================
-let lastTimestamp = parseInt(localStorage.getItem("lastTradeTime")) || Date.now();
-function catchUpBalance(){
-  const now = Date.now();
-  let seconds = Math.floor((now - lastTimestamp)/1000);
-  if(seconds>0){
-    for(let i=0;i<seconds;i++){
-      let move=(Math.random()*2)*balance*0.002;
-      if(Math.random()<0.25) move*=-1;
-      balance += move;
+  // Timer function
+  function startTimer(){
+    if(!data.withdrawal){ timerEl.innerText=""; return; }
+    function update(){ 
+      let d = data.withdrawal - Date.now();
+      if(d<=0){ timerEl.innerText="Withdrawal window passed"; withdrawBtn.disabled=true; withdrawBtn.classList.add("disabled"); return;}
+      let h=Math.floor(d/3600000); let m=Math.floor((d%3600000)/60000); let s=Math.floor((d%60000)/1000);
+      timerEl.innerText="Scheduled in "+h+"h "+m+"m "+s+"s";
     }
-    localStorage.setItem("balance",balance);
-    balanceEl.innerText="$"+balance.toFixed(2);
-    lastTimestamp = now;
-    localStorage.setItem("lastTradeTime",lastTimestamp);
+    update(); setInterval(update,1000);
   }
-}
-catchUpBalance();
+  startTimer();
 
-// ================= WALLET =================
-let wallets = {
- "USDT-ERC20":"0xA7f9C12D4E5F678901234567890ABCDEF1234567",
- "USDT-TRC20":"TXYz123456789ABCDEFGHJKLMNPQRST",
- "SOL":"9xQeWvG816bUx9EPfC9w8PqgkF5abcXYZ1234567",
- "BTC":"bc1qxy2kgdygjrsqtzq2n0yr5...wlh",
- "BNB":"bnb1grpf0955h0ykzq3ar5nmum7y6gdfl6lxfn46h2"
-};
-function openDeposit(){ document.getElementById("depositPopup").style.display="flex"; updateWallet(); }
-function closeDeposit(){ document.getElementById("depositPopup").style.display="none"; document.getElementById("depositLoading").innerText=""; }
-function updateWallet(){ document.getElementById("walletAddress").innerText = wallets[document.getElementById("networkSelect").value]; }
-function copyWallet(){ navigator.clipboard.writeText(document.getElementById("walletAddress").innerText); alert("Wallet Address Copied!"); }
+  // ================= WITHDRAWAL =================
+  window.withdraw = function(){
+    let amount=parseFloat(document.getElementById("amt").value);
+    let dest=document.getElementById("destWallet").value.trim();
+    let coin=document.getElementById("coin").value;
+    if(!amount||!dest){alert("Enter amount and destination wallet");return;}
+    
+    withdrawBtn.disabled=true;
+    withdrawBtn.innerText="Processing...";
+    withdrawBtn.style.background="white";
+    withdrawBtn.style.color="#0b0f14";
 
-function confirmDeposit(){
- let amount=parseFloat(document.getElementById("depositAmount").value);
- if(!amount||amount<=0) return;
- document.getElementById("depositLoading").innerText="Confirming deposit...";
- setTimeout(()=>{
-   balance += amount;
-   localStorage.setItem("balance",balance);
-   localStorage.setItem("lastTradeTime",Date.now());
-   saveHistory("Deposit +"+amount);
-   document.getElementById("depositLoading").innerText="Deposit Successful!";
-   updateBalanceEl();
-   setTimeout(()=>document.getElementById("depositPopup").style.display="none",1500);
- },5000);
-}
+    // 5 seconds processing animation
+    setTimeout(()=>{
+      // Failure message
+      withdrawBtn.innerText="Withdrawal Failed";
+      withdrawBtn.style.background="#f6465d";
+      withdrawBtn.style.color="white";
 
-// ================= WITHDRAW =================
-function unlockWithdrawal(){
- let amount=parseFloat(document.getElementById("withdrawAmount").value);
- if(amount<1 || balance-amount<500){
-   document.getElementById("withdrawMsg").innerText="Cannot withdraw below $500 base capital.";
-   return;
- }
- let btn = document.getElementById("withdrawBtn");
- btn.disabled=true;
- btn.innerText="Processing...";
- btn.style.background="white";
- btn.style.color="#0b0f14";
- setTimeout(()=>{
-   balance -= amount;
-   localStorage.setItem("balance",balance);
-   localStorage.setItem("lastTradeTime",Date.now());
-   saveHistory("Withdrawal -"+amount);
-   updateBalanceEl();
-   btn.innerText="Withdrawal Successful";
-   btn.style.background="#22c55e";
-   btn.style.color="white";
-   setTimeout(()=>{
-     btn.innerText="Unlock Withdrawal";
-     btn.disabled=false;
-     document.getElementById("withdrawAmount").value="";
-     document.getElementById("withdrawMsg").innerText="";
-   },1500);
- },5000);
-}
+      // Update history
+      data.history.push(`Withdrawal of ${amount} ${coin} to ${dest} failed | ${new Date().toLocaleTimeString()}`);
+      save();
 
-// ================= CANCEL TRADE =================
-function cancelTrade(){
-  balance = 500;
-  localStorage.setItem("balance", balance);
-  localStorage.setItem("lastTradeTime",Date.now());
-  updateBalanceEl();
-  window.tradingRunning=false;
-  window.tradingHold=false;
-  saveHistory("Trade CANCELLED | Balance Reset to $500");
-}
+      // Show slide note
+      const slide = document.getElementById("slideNote");
+      slide.style.bottom="20px";
+      setTimeout(()=>{ slide.style.bottom="-100px"; },15000);
 
-// ================= HISTORY =================
-function saveHistory(text){
- let list = JSON.parse(localStorage.getItem("history"))||[];
- list.push(text+" | "+new Date().toLocaleTimeString());
- localStorage.setItem("history",JSON.stringify(list));
- loadHistory();
-}
-function loadHistory(){
- historyEl.innerHTML="";
- let list = JSON.parse(localStorage.getItem("history"))||[];
- list.forEach(item=>historyEl.innerHTML+=`<li>${item}</li>`);
-}
-loadHistory();
+      // Redirect back to home after short delay
+      setTimeout(()=>{ location="home.html"; },1000);
 
-// ================= LIVE BALANCE =================
-function updateBalanceEl(){ balanceEl.innerText="$"+balance.toFixed(2); }
+    },5000);
+  }
 
-function liveBalanceTick(){
- if(!window.tradingRunning || window.tradingHold) return;
- let move=(Math.random()*2)*balance*0.002;
- if(Math.random()<0.25) move*=-1;
- balance += move;
- localStorage.setItem("balance",balance);
- balanceEl.classList.remove("balance-up","balance-down");
- balanceEl.classList.add(move>=0?"balance-up":"balance-down");
- updateBalanceEl();
-}
-setInterval(liveBalanceTick,1000);
-
-// ================= CHART + SIGNAL =================
-const canvas=document.getElementById("chart");
-const ctx=canvas.getContext("2d");
-canvas.width=canvas.offsetWidth; canvas.height=320;
-let candles=[],maxCandles=40,basePrice=50000,marketMode="Normal";
-let pairVolatility={"BTC/USDT":120,"ETH/USDT":80,"SOL/USDT":60,"ADA/USDT":40,"XRP/USDT":35,"DOGE/USDT":30,"DOT/USDT":45,"LTC/USDT":55,"AVAX/USDT":70,"TRX/USDT":25};
-let modeMultiplier={"Calm":0.5,"Normal":1,"Volatile":2};
-
-function toggleMarketMode(){ marketMode = marketMode==="Calm"?"Normal":marketMode==="Normal"?"Volatile":"Calm"; }
-function generateCandle(){ 
- let pair=document.getElementById("pair").value;
- let vol = pairVolatility[pair]*modeMultiplier[marketMode];
- let open=basePrice, close=open+(Math.random()-0.5)*vol;
- let high=Math.max(open,close)+Math.random()*vol/2;
- let low=Math.min(open,close)-Math.random()*vol/2;
- basePrice=close; candles.push({open,close,high,low});
- if(candles.length>maxCandles)candles.shift();
-}
-function drawChart(){
- ctx.clearRect(0,0,canvas.width,canvas.height);
- let max=Math.max(...candles.map(c=>c.high)), min=Math.min(...candles.map(c=>c.low)), w=canvas.width/maxCandles;
- candles.forEach((c,i)=>{
-   let x=i*w+w/4, scale=canvas.height/(max-min||1);
-   let openY=canvas.height-(c.open-min)*scale;
-   let closeY=canvas.height-(c.close-min)*scale;
-   let highY=canvas.height-(c.high-min)*scale;
-   let lowY=canvas.height-(c.low-min)*scale;
-   ctx.strokeStyle=c.close>c.open?"#00c087":"#f6465d";
-   ctx.fillStyle=ctx.strokeStyle;
-   ctx.beginPath(); ctx.moveTo(x+w/4,highY); ctx.lineTo(x+w/4,lowY); ctx.stroke();
-   ctx.fillRect(x,Math.min(openY,closeY),w/2,Math.abs(openY-closeY)||2);
- });
-}
-function updateSignal(){
- if(candles.length<2)return;
- let last=candles[candles.length-1], prev=candles[candles.length-2];
- let change=last.close-prev.close;
- let confidence=Math.floor(Math.random()*20)+75;
- document.getElementById("signalPrice").innerText=Math.round(last.close);
- let chgEl=document.getElementById("signalChange");
- if(change>0){
-   document.getElementById("signalText").innerText="Signal: BUY";
-   chgEl.innerText="+"+change.toFixed(2);
-   chgEl.className="chg up";
- }else{
-   document.getElementById("signalText").innerText="Signal: SELL";
-   chgEl.innerText=change.toFixed(2);
-   chgEl.className="chg down";
- }
- document.getElementById("signalDesc").innerText="Confidence: "+confidence+"% | Mode: "+marketMode;
-}
-function animate(){ generateCandle(); drawChart(); updateSignal(); setTimeout(animate,1200); }
-animate();
-
-// ================= REDIRECT BUTTONS =================
-function redirectWithdrawal(){
- document.body.innerHTML="<div style='color:white;text-align:center;margin-top:50vh'>Redirecting to Withdrawal Page<span class='loading-dots'><span>.</span><span>.</span><span>.</span></span></div>";
- setTimeout(()=>location="withdrawal.html",2000);
-}
-function redirectHome(){
- document.body.innerHTML="<div style='color:white;text-align:center;margin-top:50vh'>Redirecting to Dashboard<span class='loading-dots'><span>.</span><span>.</span><span>.</span></span></div>";
- setTimeout(()=>location="home.html",2000);
-}
+  // Redirect function
+  window.redirectHome = function(){
+    document.body.innerHTML="<div style='color:white;text-align:center;margin-top:50vh'>Redirecting to Dashboard<span class='loading-dots'><span>.</span><span>.</span><span>.</span></span></div>";
+    setTimeout(()=>location="home.html",2000);
+  }
+});
 </script>
 </body>
-</html> 
+</html>
