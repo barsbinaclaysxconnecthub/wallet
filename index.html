@@ -4,14 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CorePay Activation Sandbox</title>
-
 <style>
-body{margin:0;background:#0b0f14;font-family:system-ui;color:white}
+body{margin:0;background:#0b0f14;font-family:system-ui;color:white;opacity:0;transition:.3s}
 .center{height:100vh;display:flex;justify-content:center;align-items:center}
 .card{background:#111827;padding:40px;border-radius:18px;width:360px;text-align:center}
 h2{margin-top:0;margin-bottom:10px}
 input,select{width:100%;padding:14px;margin:10px 0;background:#0b0f14;border:1px solid #263041;border-radius:10px;color:white}
-button{width:100%;padding:15px;margin-top:10px;border:none;border-radius:12px;background:#22c55e;color:white;font-weight:700;cursor:pointer}
+button{width:100%;padding:15px;margin-top:10px;border:none;border-radius:12px;background:#22c55e;color:white;font-weight:700;cursor:pointer;transition:.3s}
 .logo{width:160px;margin-bottom:15px}
 .pop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);justify-content:center;align-items:center}
 .box{background:#111827;padding:30px;border-radius:16px;width:330px;text-align:center}
@@ -21,15 +20,12 @@ button{width:100%;padding:15px;margin-top:10px;border:none;border-radius:12px;ba
 .fill{height:100%;width:0;background:#22c55e}
 </style>
 </head>
-
 <body>
 
 <div class="center">
 <div class="card">
-
 <img src="logo.png" class="logo">
 <h2>CorePay Activation Sandbox</h2>
-
 <select id="net">
 <option>TRX</option>
 <option>BTC</option>
@@ -37,15 +33,12 @@ button{width:100%;padding:15px;margin-top:10px;border:none;border-radius:12px;ba
 <option>BNB</option>
 <option>SOL</option>
 </select>
-
 <input id="addr" placeholder="Wallet address">
-
 <button onclick="finger()">Secure Login</button>
-
 </div>
 </div>
 
-<!-- fingerprint -->
+<!-- fingerprint pop -->
 <div class="pop" id="fingerPop">
 <div class="box">
 <h3 id="scanTitle">Fingerprint Scan</h3>
@@ -54,7 +47,7 @@ button{width:100%;padding:15px;margin-top:10px;border:none;border-radius:12px;ba
 </div>
 </div>
 
-<!-- approval -->
+<!-- approval pop -->
 <div class="pop" id="approvePop">
 <div class="box">
 <h3>Wallet Approval</h3>
@@ -63,31 +56,27 @@ button{width:100%;padding:15px;margin-top:10px;border:none;border-radius:12px;ba
 </div>
 </div>
 
-<!-- EMAIL -->
+<!-- email pop -->
 <div class="pop" id="emailPop">
 <div class="box">
 <h3>Email Verification</h3>
-
 <div id="email1">
 <input id="email" placeholder="Email">
 <button onclick="sendEmail()">Send Code</button>
 </div>
-
 <div id="emailBarBox" style="display:none">
 <p id="emailStatus">Sending encrypted mail…</p>
 <div class="bar"><div class="fill" id="emailBar"></div></div>
 </div>
-
 <div id="email2" style="display:none">
 <input id="ecode" placeholder="Enter code">
 <button onclick="verifyEmailCode()">Verify</button>
 </div>
-
 </div>
 </div>
 
 <script>
-/* Wallet format validation */
+document.addEventListener("DOMContentLoaded", ()=>{
 function validWallet(net,val){
 const rules={
 TRX:/^T[1-9A-HJ-NP-Za-km-z]{33}$/,
@@ -98,9 +87,7 @@ SOL:/^[1-9A-HJ-NP-Za-km-z]{32,44}$/
 };
 return rules[net].test(val);
 }
-
-/* Fingerprint scan */
-function finger(){
+window.finger = function(){
 if(addr.value.length<5){alert("Enter wallet");return;}
 fingerPop.style.display="flex";
 scanTitle.innerText="Fingerprint Scan";
@@ -116,54 +103,32 @@ if(ok){approvePop.style.display="flex";}
 },2000);
 },delay);
 }
-
-/* Approval to email step */
-function emailStep(){
-approvePop.style.display="none";
-emailPop.style.display="flex";
-}
-
-/* Send email code */
-function sendEmail(){
+window.emailStep = function(){approvePop.style.display="none"; emailPop.style.display="flex";}
+window.sendEmail = function(){
 let mail=email.value.trim();
 let valid=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail);
-email1.style.display="none";
-emailBarBox.style.display="block";
+email1.style.display="none"; emailBarBox.style.display="block";
 let p=0;
 let t=setInterval(()=>{
-p+=4;
-emailBar.style.width=p+"%";
-if(p>=100){
-clearInterval(t);
-if(!valid){
-emailStatus.innerText="Mail error. Invalid format";
-setTimeout(()=>location="index.html",2000);
-} else {
-emailBarBox.style.display="none";
-email2.style.display="block";
-}
+p+=4; emailBar.style.width=p+"%";
+if(p>=100){clearInterval(t);
+if(!valid){emailStatus.innerText="Mail error";setTimeout(()=>location="index.html",2000);}
+else{emailBarBox.style.display="none"; email2.style.display="block";}
 }
 },70);
 }
-
-/* Verify email code with 6-sec loading before redirect */
-function verifyEmailCode(){
+window.verifyEmailCode = function(){
 let code=ecode.value.trim();
 if(code.length!==20 || code!=="88287463991237827383"){
-alert("Email verification failed");
-location="index.html";
-return;
+alert("Email verification failed"); location="index.html"; return;
 }
-// show loading
-scanText.innerText="Logging in... Please wait...";
-emailPop.style.display="flex";
-setTimeout(()=>{
-localStorage.wallet=addr.value;
-localStorage.net=net.value;
-location="home.html";
-},6000); // 6-sec delay
+localStorage.wallet=addr.value; localStorage.net=net.value;
+document.body.innerHTML="<h3 style='color:white;text-align:center;margin-top:50vh'>Loading CorePay Dashboard...</h3>";
+setTimeout(()=>{location="home.html";},6000);
 }
-</script>
 
+setTimeout(()=>document.body.style.opacity=1,300);
+});
+</script>
 </body>
-</html>
+  </html>
