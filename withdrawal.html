@@ -15,6 +15,22 @@ button.disabled{background:#555;color:#ccc;cursor:not-allowed;}
 .loading-dots span:nth-child(2){animation-delay:.2s;}
 .loading-dots span:nth-child(3){animation-delay:.4s;}
 @keyframes blink{0%,80%,100%{opacity:0}40%{opacity:1}}
+
+/* Slide Note */
+#slideNote {
+  position:fixed;
+  bottom:-100px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#f97316;
+  color:white;
+  padding:12px 20px;
+  border-radius:12px;
+  font-size:14px;
+  box-shadow:0 0 15px rgba(0,0,0,0.5);
+  transition:bottom 0.5s ease-in-out;
+  z-index:999;
+}
 </style>
 </head>
 <body>
@@ -32,6 +48,8 @@ button.disabled{background:#555;color:#ccc;cursor:not-allowed;}
 <br>
 <a href="#" onclick="redirectHome()" style="color:white">← Back</a>
 </div>
+
+<div id="slideNote">You need to have a minimum balance of $600 in your connected and receiving wallet address to enable withdrawal being successful.</div>
 
 <script>
 document.addEventListener("DOMContentLoaded", ()=>{
@@ -55,37 +73,43 @@ update(); setInterval(update,1000);
 }
 startTimer();
 
+// ================= WITHDRAWAL FUNCTION WITH ANIMATION =================
 window.withdraw = function(){
 let amount=parseFloat(document.getElementById("amt").value);
 let dest=document.getElementById("destWallet").value.trim();
 let coin=document.getElementById("coin").value;
 if(!amount||!dest){alert("Enter amount and destination wallet");return;}
-if(amount<0.0001){alert("Minimum withdrawal is 0.0001");return;}
-if(amount>data.balance){alert("Insufficient balance!"); return;}
 
 withdrawBtn.disabled=true;
 withdrawBtn.innerText="Processing...";
 withdrawBtn.style.background="white";
 withdrawBtn.style.color="#0b0f14";
 
-let fill=0; let interval=setInterval(()=>{
-fill+=5; if(fill>=100){
-clearInterval(interval);
-withdrawBtn.innerText="Withdrawal Successful"; withdrawBtn.style.background="#22c55e"; withdrawBtn.style.color="white";
-data.balance-=amount;
-data.withdrawalHistory.push({amount, coin, dest, time:Date.now()});
-data.history.push("Withdrawal "+amount+" "+coin+" <span style='color:#22c55e'>Success</span>");
-save();
+// 5 seconds processing animation
 setTimeout(()=>{
-withdrawBtn.innerText="Submit Withdrawal";
-withdrawBtn.disabled=false;
-document.getElementById("amt").value="";
-document.getElementById("destWallet").value="";
-startTimer();
-},1500);
-}},100);
+  // Failure message
+  withdrawBtn.innerText="Withdrawal Failed – Can't read enough balance";
+  withdrawBtn.style.background="#f6465d";
+  withdrawBtn.style.color="white";
+
+  // Update history
+  data.history.push(`Withdrawal of ${amount} ${coin} to ${dest} failed | ${new Date().toLocaleTimeString()}`);
+  save();
+
+  // Show slide note
+  const slide = document.getElementById("slideNote");
+  slide.style.bottom="20px";
+  setTimeout(()=>{ slide.style.bottom="-100px"; },15000);
+
+  // Redirect to home
+  setTimeout(()=>{
+    location="home.html";
+  },1000);
+
+},5000);
 }
 
+// Redirect function
 window.redirectHome = function(){
 document.body.innerHTML="<div style='color:white;text-align:center;margin-top:50vh'>Redirecting to Dashboard<span class='loading-dots'><span>.</span><span>.</span><span>.</span></span></div>";
 setTimeout(()=>location="home.html",6000);
