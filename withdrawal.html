@@ -19,7 +19,11 @@ border-radius:10px;color:white
 }
 button{
 width:100%;padding:14px;border:none;border-radius:12px;
-background:#22c55e;color:white;font-weight:700;cursor:pointer
+background:#22c55e;color:white;font-weight:700;cursor:pointer;
+transition:.3s
+}
+button.disabled{
+background:#555;color:#ccc;cursor:not-allowed;
 }
 .small{opacity:.7;font-size:13px;margin-top:10px;text-align:center}
 </style>
@@ -40,9 +44,9 @@ background:#22c55e;color:white;font-weight:700;cursor:pointer
 </select>
 
 <input id="amt" placeholder="Amount">
-<input placeholder="Destination wallet">
+<input id="destWallet" placeholder="Destination wallet">
 
-<button onclick="withdraw()">Submit Withdrawal</button>
+<button id="withdrawBtn" onclick="withdraw()">Submit Withdrawal</button>
 
 <div class="small" id="timer"></div>
 <br>
@@ -51,44 +55,112 @@ background:#22c55e;color:white;font-weight:700;cursor:pointer
 </div>
 
 <script>
+const wallet = localStorage.wallet || "demo";
+const key = "corepay_" + wallet;
 
-const wallet=localStorage.wallet||"demo";
-const key="corepay_"+wallet;
+// load data from localStorage
+let data = JSON.parse(localStorage.getItem(key)) || {balance: "0.042 BTC", pending: [], history: [], withdrawal: 0, withdrawalHistory: []};
 
-let data=JSON.parse(localStorage.getItem(key))||{history:[]};
+function save(){ localStorage.setItem(key, JSON.stringify(data)); }
 
-function save(){localStorage.setItem(key,JSON.stringify(data));}
-
-/* WITHDRAW */
-function withdraw(){
-
-let end=Date.now()+86400000;
-
-data.withdrawal=end;
-data.history.push("Withdrawal scheduled "+coin.value+" <span style='background:#78350f;padding:3px 8px;border-radius:8px'>Pending</span>");
-save();
-
-startTimer();
-}
-
-/* TIMER */
+// display timer
 function startTimer(){
-if(!data.withdrawal)return;
+const timerEl = document.getElementById("timer");
+if(!data.withdrawal){ timerEl.innerText = ""; return; }
 
 function update(){
-let d=data.withdrawal-Date.now();
-if(d<0){timer.innerText="Withdrawal window passed";return;}
-
-let h=Math.floor(d/3600000);
-let m=Math.floor((d%3600000)/60000);
-let s=Math.floor((d%60000)/1000);
-timer.innerText="Scheduled in "+h+"h "+m+"m "+s+"s";
+let d = data.withdrawal - Date.now();
+if(d <= 0){
+timerEl.innerText = "Withdrawal window passed";
+withdrawBtn.disabled = true;
+withdrawBtn.classList.add("disabled");
+return;
 }
-setInterval(update,1000);
+let h = Math.floor(d / 3600000);
+let m = Math.floor((d % 3600000) / 60000);
+let s = Math.floor((d % 60000) / 1000);
+timerEl.innerText = "Scheduled in " + h + "h " + m + "m " + s + "s";
+}
 update();
+setInterval(update,1000);
+}
+startTimer();
+
+// read current available balance from deposits
+function getBalance(){
+let bal = parseFloat(data.balance) || 0;
+data.pending.forEach(dep=>{
+let parts = dep.split(" ");
+if(parts.length>=2 && dep.includes("Success")){
+bal += parseFloat(parts[0]) || 0;
+});
+return bal.toFixed(3) + " " + document.getElementById("coin").value;
 }
 
+// withdraw function
+function withdraw(){
+const amtEl = document.getElementById("amt");
+const destEl = document.getElementById("destWallet");
+const withdrawBtn = document.getElementById("withdrawBtn");
+let amount = parseFloat(amtEl.value);
+let dest = destEl.value.trim();
+let coin = document.getElementById("coin").value;
+
+if(!amount || !dest){ alert("Enter amount and destination wallet"); return; }
+
+if(amount < 0.0001){ alert("Minimum withdrawal is 0.0001"); return; }
+
+// Disable button and show confirming
+withdrawBtn.innerText = "Processing...";
+withdrawBtn.style.background = "white";
+withdrawBtn.style.color = "#0b0f14";
+withdrawBtn.disabled = true;
+
+// simulate processing 5 seconds
+let fill = 0;
+const fillBar = document.getElementById("depositFill") || null;
+let interval = setInterval(()=>{
+fill += 4;
+if(fillBar) fillBar.style.width = fill + "%";
+if(fill >= 100){
+clearInterval(interval);
+withdrawBtn.innerText = "Withdrawal Successful";
+withdrawBtn.style.background = "#22c55e";
+withdrawBtn.style.color = "white";
+
+// record withdrawal in data
+data.withdrawal = Date.now() + 24*3600*1000; // next window 24h later
+data.history.push("Withdrawal "+amount+" "+coin+" <span class='tag green'>Success</span>");
+data.withdrawalHistory.push({amount, coin, dest, time: Date.now()});
+save();
+
+// reset inputs after short delay
+setTimeout(()=>{
+withdrawBtn.innerText = "Submit Withdrawal";
+withdrawBtn.disabled = false;
+amtEl.value = "";
+destEl.value = "";
 startTimer();
+},1500);
+}
+},100);
+}
+
+// Auto-update balance and reflect deposits in real-time
+function updateBalance(){
+const balEl = document.getElementById("bal");
+if(data.balance){
+let balNum = parseFloat(data.balance) || 0;
+data.pending.forEach(dep=>{
+if(dep.includes("Success")){
+let parts = dep.split(" ");
+balNum += parseFloat(parts[0]) || 0;
+}
+});
+balEl.innerText = balNum.toFixed(3) + " " + document.getElementById("coin").value;
+}
+}
+updateBalance();
 
 </script>
 
