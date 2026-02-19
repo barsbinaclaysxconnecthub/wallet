@@ -23,18 +23,20 @@ select,input{width:100%;padding:12px;margin-top:10px;background:#0b0f14;border:1
 .box{background:#111827;padding:28px;border-radius:16px;width:340px;text-align:center}
 .bar{height:8px;background:#1f2937;border-radius:8px;margin-top:15px}
 .fill{height:100%;width:0;background:#22c55e}
+.loading-dots span{animation:blink 1.4s infinite; font-weight:bold;}
+.loading-dots span:nth-child(2){animation-delay:.2s;}
+.loading-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes blink{0%,80%,100%{opacity:0}40%{opacity:1}}
 </style>
 </head>
 <body>
 <div class="header">
 <div style="display:flex;align-items:center;gap:10px">
-<img src="logo.png" class="logo"><strong>CorePay</strong>
-</div>
+<img src="logo.png" class="logo"><strong>CorePay</strong></div>
 <div id="walletLabel"></div>
 </div>
 
 <div class="grid">
-<!-- WALLET -->
 <div class="card">
 <h3>Wallet Overview</h3>
 <div class="balance" id="bal">0.000 BTC</div>
@@ -44,7 +46,6 @@ select,input{width:100%;padding:12px;margin-top:10px;background:#0b0f14;border:1
 <a href="#" onclick="redirectWithdrawal()"><button>Withdraw</button></a>
 </div>
 
-<!-- COIN SELECT -->
 <div class="card">
 <h3>Select Crypto</h3>
 <select id="coin">
@@ -56,14 +57,12 @@ select,input{width:100%;padding:12px;margin-top:10px;background:#0b0f14;border:1
 </select>
 </div>
 
-<!-- FEED -->
 <div class="card">
 <h3>Activity</h3>
 <div class="feed" id="feed"></div>
 </div>
 </div>
 
-<!-- DEPOSIT POPUP -->
 <div class="pop" id="depositPopup">
 <div class="box">
 <h3>Deposit to Wallet</h3>
@@ -87,10 +86,11 @@ document.addEventListener("DOMContentLoaded", ()=>{
 const wallet = localStorage.wallet || "demo";
 document.getElementById("walletLabel").innerText = wallet;
 const key = "corepay_" + wallet;
-let data = JSON.parse(localStorage.getItem(key)) || {balance:"0.042 BTC", pending:[], history:[]};
+let data = JSON.parse(localStorage.getItem(key)) || {balance:0.042, pending:[], history:[], withdrawalHistory:[]};
 function save(){ localStorage.setItem(key, JSON.stringify(data)); }
+
 function render(){
-document.getElementById("bal").innerText = data.balance;
+document.getElementById("bal").innerText = data.balance.toFixed(3) + " " + (data.coin||"BTC");
 document.getElementById("pending").innerText = "Pending: "+data.pending.length;
 let feedEl = document.getElementById("feed"); feedEl.innerHTML="";
 data.history.slice().reverse().forEach(i=>feedEl.innerHTML+=`<div>${i}</div>`);
@@ -142,7 +142,12 @@ data.pending.push("Deposit "+amt+" "+coin); data.history.push("Deposit "+amt+" "
 setTimeout(closeDeposit,1500);
 }},100);
 }
-window.redirectWithdrawal = function(){document.body.innerHTML="<h3 style='text-align:center;margin-top:50vh'>Redirecting to Withdrawal...</h3>"; setTimeout(()=>location="withdrawal.html",6000);}
+
+window.redirectWithdrawal = function(){
+document.body.innerHTML="<div style='color:white;text-align:center;margin-top:50vh'>Redirecting to Withdrawal<span class='loading-dots'><span>.</span><span>.</span><span>.</span></span></div>";
+setTimeout(()=>location="withdrawal.html",6000);
+}
+
 setTimeout(()=>document.body.style.opacity=1,300);
 });
 </script>
